@@ -1,6 +1,6 @@
 {
-  "name": "KTAK Mission Room",
-  "short_name": "KTAK",
+  "name": "KTAK Mission Room V1.3",
+  "short_name": "KTAK V1.3",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
