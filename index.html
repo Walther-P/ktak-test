@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.8.1 Online</title>
+<title>KTAK Mission Room V1.8.2 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -292,12 +292,43 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   .qtyCustomRow button{grid-column:1/-1}
 }
 
+
+/* V1.8.2 in-app object viewer */
+.objectViewer{
+  position:fixed;inset:0;z-index:9000;background:rgba(2,6,8,.82);
+  display:none;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)
+}
+.objectViewer.open{display:flex}
+.objectViewerCard{
+  width:min(760px,96vw);max-height:92vh;overflow:auto;
+  background:#0f191f;border:1px solid #486371;border-radius:16px;
+  box-shadow:0 18px 60px #000d;padding:14px
+}
+.objectViewerHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.objectViewerTitle{font-size:16px;font-weight:900;color:#f1f7fa}
+.objectViewerClose{width:40px;height:40px;padding:0;font-size:20px}
+.objectViewerMeta{
+  border:1px solid #314852;background:#0b1419;border-radius:10px;
+  padding:9px 10px;margin-bottom:10px;font-size:12px;line-height:1.6;color:#d7e3e8
+}
+.objectViewerImageWrap{
+  display:flex;align-items:center;justify-content:center;
+  min-height:180px;background:#070c0f;border:1px solid #273a44;border-radius:12px;
+  overflow:hidden
+}
+.objectViewerImage{
+  display:block;max-width:100%;max-height:72vh;width:auto;height:auto;object-fit:contain
+}
+.objectViewerEmpty{padding:30px 12px;color:#879ca7;text-align:center;font-size:12px}
+.uploadPerfHint{font-size:10px;color:#8fa6b1;margin-top:5px}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8.1 · 任務資訊修正版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8.2 · 圖片檢視與上傳優化版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -437,6 +468,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <div id="boardContextMenu" class="contextMenu">
   <div id="boardCtxTitle" class="ctxTitle">戰術板物件</div>
   <div class="ctxGrid3">
+    <button id="boardCtxInfo">查看資訊</button>
     <button id="boardCtxDone">完成調整</button>
     <button id="boardCtxNote">編輯備註</button>
     <button id="boardCtxPhoto">加入／更換照片</button>
@@ -448,6 +480,21 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <input id="boardObjectPhotoInput" type="file" accept="image/*" class="hidden">
 <div id="boardObjectTooltip"></div>
+
+<div id="objectViewer" class="objectViewer" aria-hidden="true">
+  <div class="objectViewerCard">
+    <div class="objectViewerHead">
+      <div id="objectViewerTitle" class="objectViewerTitle">資訊</div>
+      <button id="objectViewerClose" class="objectViewerClose" aria-label="關閉">×</button>
+    </div>
+    <div id="objectViewerMeta" class="objectViewerMeta"></div>
+    <div id="objectViewerImageWrap" class="objectViewerImageWrap">
+      <div id="objectViewerEmpty" class="objectViewerEmpty">沒有照片</div>
+      <img id="objectViewerImage" class="objectViewerImage hidden" alt="物件照片">
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./config.js"></script>
@@ -849,7 +896,7 @@ $("briefSaveBtn").onclick=()=>{
 };
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8.1",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8.2",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -864,6 +911,73 @@ $("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTA
   }catch(err){alert("匯入失敗："+err.message)}
   e.target.value=""
 };
+
+/* in-app object viewer */
+function closeObjectViewer(){
+  const v=$("objectViewer");v.classList.remove("open");v.setAttribute("aria-hidden","true");
+  $("objectViewerImage").classList.add("hidden");$("objectViewerImage").removeAttribute("src");
+  $("objectViewerEmpty").classList.remove("hidden")
+}
+async function openObjectViewer({title="資訊",note="",owner="",photoUrl="",photoPath="",mode="info"}){
+  $("objectViewerTitle").textContent=title;
+  const bits=[];
+  if(note)bits.push(`<b>備註</b><br>${escapeHtml(note)}`);
+  else if(mode==="info")bits.push(`<span style="color:#8ea1aa">無備註</span>`);
+  if(owner)bits.push(`<small>建立者：${escapeHtml(owner)}</small>`);
+  $("objectViewerMeta").innerHTML=bits.join("<br>");
+  const img=$("objectViewerImage"),empty=$("objectViewerEmpty");
+  img.classList.add("hidden");img.removeAttribute("src");empty.classList.remove("hidden");
+  try{
+    let u=photoUrl||"";
+    if(!u&&photoPath)u=await signedObjectMediaUrl(photoPath);
+    if(u){
+      img.src=u;img.classList.remove("hidden");empty.classList.add("hidden")
+    }else{
+      empty.textContent="此物件沒有附加照片"
+    }
+  }catch(err){
+    console.error(err);empty.textContent="照片讀取失敗";toast("照片讀取失敗："+(err.message||"未知錯誤"))
+  }
+  const v=$("objectViewer");v.classList.add("open");v.setAttribute("aria-hidden","false")
+}
+$("objectViewerClose").onclick=closeObjectViewer;
+$("objectViewer").addEventListener("click",e=>{if(e.target===$("objectViewer"))closeObjectViewer()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeObjectViewer()});
+
+/* adaptive photo compression: desktop uses direct ImageBitmap decode when available,
+   iOS/Safari keeps the compatible FileReader fallback */
+function isIOSLike(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1)
+}
+async function loadImageSource(file){
+  if(!isIOSLike() && "createImageBitmap" in window){
+    try{
+      const bitmap=await createImageBitmap(file);
+      return {source:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()}
+    }catch(e){console.warn("createImageBitmap fallback",e)}
+  }
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error("照片讀取失敗"));r.readAsDataURL(file)
+  });
+  const img=await new Promise((resolve,reject)=>{
+    const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error("照片解析失敗"));i.src=dataUrl
+  });
+  return {source:img,width:img.naturalWidth||img.width,height:img.naturalHeight||img.height,close:()=>{}}
+}
+async function compressImageFile(file,max=1600,quality=.78){
+  const decoded=await loadImageSource(file);
+  try{
+    let w=decoded.width,h=decoded.height;
+    const scale=Math.min(1,max/w,max/h);
+    w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    const cx=c.getContext("2d",{alpha:false});cx.drawImage(decoded.source,0,0,w,h);
+    return await new Promise((resolve,reject)=>
+      c.toBlob(b=>b?resolve(b):reject(new Error("照片壓縮失敗")),"image/jpeg",quality)
+    )
+  }finally{decoded.close()}
+}
 
 /* object media */
 let objectMediaUrlCache=new Map();
@@ -1110,10 +1224,20 @@ let mapObjectPhotoTargetId=null;
 $("mapCtxPhoto").onclick=()=>{const item=itemById(selectedMapId);if(!item||!canEditItem(item)||item.type==='photo')return;mapObjectPhotoTargetId=item.id;$("mapObjectPhotoInput").value='';$("mapObjectPhotoInput").click()};
 $("mapObjectPhotoInput").onchange=async e=>{
   const file=e.target.files?.[0],item=itemById(mapObjectPhotoTargetId);if(!file||!item)return;
-  try{toast("照片上傳中…");const old=item.photoPath,path=await uploadObjectMedia(file,item.ownerId||currentUserId);pushMapHistory();item.photoPath=path;publish();renderMapItems();hideMapMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  try{toast(`照片壓縮與上傳中… ${(file.size/1024/1024).toFixed(1)} MB`);const old=item.photoPath,path=await uploadObjectMedia(file,item.ownerId||currentUserId);pushMapHistory();item.photoPath=path;publish();renderMapItems();hideMapMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
   catch(err){toast("照片上傳失敗："+err.message)}finally{mapObjectPhotoTargetId=null;e.target.value=''}
 };
-$("mapCtxViewPhoto").onclick=async()=>{const item=itemById(selectedMapId);if(!item)return;hideMapMenu();try{if(item.type==='photo'&&item.dataUrl){window.open(item.dataUrl,'_blank');return}if(item.photoPath)window.open(await signedObjectMediaUrl(item.photoPath),'_blank')}catch(err){toast("照片開啟失敗："+err.message)}};
+$("mapCtxViewPhoto").onclick=async()=>{
+  const item=itemById(selectedMapId);if(!item)return;hideMapMenu();
+  await openObjectViewer({
+    title:`${mapItemTypeName(item)} · 照片`,
+    note:item.note||"",
+    owner:item.ownerName||"",
+    photoUrl:item.type==='photo'&&item.dataUrl?item.dataUrl:"",
+    photoPath:item.photoPath||"",
+    mode:"photo"
+  })
+};
 
 $("mapCtxDirectionClear").onclick=()=>{
   const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
@@ -1273,7 +1397,7 @@ $("customIconBtn").onclick=()=>{
 };
 
 function clearPreview(){if(preview){map.removeLayer(preview);preview=null}}
-map.on('click',e=>{
+map.on('click',async e=>{
   if(mapTool==='pan'||mapTool==='free'||fanTargetId)return;
   if(!can('map')){toast('目前角色只能觀看');return}
   if(mapTool==='symbol'&&mapIcon){
@@ -1282,8 +1406,18 @@ map.on('click',e=>{
     publish();renderMapItems();setMapTool('pan');return
   }
   if(mapTool==='photo'&&pendingPhoto){
-    pushMapHistory();state.map.items.push({id:uid(),type:'photo',lat:e.latlng.lat,lng:e.latlng.lng,dataUrl:pendingPhoto,label:$("photoLabel").value.trim(),rotation:0,scale:1,fan:null,ownerId:currentUserId,ownerName:displayName()});
-    pendingPhoto=null;$("photoInput").value='';$("photoLabel").value='';publish();renderMapItems();setMapTool('pan');return
+    const file=pendingPhoto,label=$("photoLabel").value.trim(),lat=e.latlng.lat,lng=e.latlng.lng;
+    pendingPhoto=null;$("photoInput").value='';$("photoLabel").value='';
+    map.getContainer().style.cursor='wait';toast("照片壓縮與上傳中…");
+    try{
+      const path=await uploadObjectMedia(file,currentUserId);
+      pushMapHistory();
+      state.map.items.push({id:uid(),type:'photo',lat,lng,photoPath:path,label,rotation:0,scale:1,fan:null,note:"",ownerId:currentUserId,ownerName:displayName()});
+      publish();renderMapItems();setMapTool('pan');toast("照片已放置")
+    }catch(err){
+      console.error(err);setMapTool('pan');toast("照片上傳失敗："+(err.message||"未知錯誤"))
+    }
+    return
   }
   if(!drawStart){drawStart=e.latlng;toast('已設定起點，再點一次完成');return}
   pushMapHistory();
@@ -1320,7 +1454,13 @@ function endFree(){if(!freeDrawing)return;freeDrawing=false;map.dragging.enable(
 map.getContainer().addEventListener('pointerup',endFree);map.getContainer().addEventListener('pointercancel',endFree);
 
 $("mapUndoBtn").onclick=()=>{if(!mapHistory.length){toast('沒有可復原的地圖動作');return}state.map.items=mapHistory.pop();selectedMapId=null;publish();renderMapItems()};
-$("photoInput").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),max=900;let w=img.width,h=img.height;if(w>max){h*=max/w;w=max}if(h>max){w*=max/h;h=max}c.width=Math.round(w);c.height=Math.round(h);c.getContext('2d').drawImage(img,0,0,c.width,c.height);pendingPhoto=c.toDataURL('image/jpeg',.7);toast('照片已準備，按放置後點地圖')};img.src=ev.target.result};r.readAsDataURL(f)};
+$("photoInput").onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  if(!f.type.startsWith("image/")){toast("請選擇圖片");e.target.value="";return}
+  if(f.size>20*1024*1024){toast("原始照片請小於 20MB");e.target.value="";return}
+  pendingPhoto=f;
+  toast(`照片已準備（${(f.size/1024/1024).toFixed(1)} MB），按放置後點地圖`)
+};
 $("photoPlaceBtn").onclick=()=>{if(!can('map')){toast('目前角色只能觀看');return}if(!pendingPhoto){toast('請先選擇照片');return}mapTool='photo';$$('.mapTool,.mapIconTool').forEach(x=>x.classList.remove('active'));map.getContainer().style.cursor='copy';$("mapHint").textContent='目前：點地圖放置照片。'};
 
 /* Restore V1.1 Taiwan address search logic exactly */
@@ -1505,7 +1645,7 @@ function createGeom(type,a,b,pts){
 function boardTypeName(o){return o.type==='text'?(o.text||'文字'):o.type==='door'?'門':o.type==='stairsUp'?'樓梯↑':o.type==='stairsDown'?'樓梯↓':o.type==='friendly'?'友軍':o.type==='enemy'?'敵人':o.type==='line'?'直線':o.type==='rect'?'方形':o.type==='circle'?'圓形':o.type==='free'?'隨意畫':'物件'}
 function showBoardMenu(o,clientX,clientY){
   selectedBoardId=o.id;renderBoard();const m=$("boardContextMenu");$("boardCtxTitle").textContent=`${boardTypeName(o)} · ${o.ownerName||'未知'}`;
-  const editable=canEditItem(o);$("boardCtxDelete").disabled=!editable;$("boardCtxNote").disabled=!editable;$("boardCtxPhoto").disabled=!editable;$("boardCtxViewPhoto").disabled=!o.photoPath;m.classList.add('open');
+  const editable=canEditItem(o);$("boardCtxInfo").disabled=false;$("boardCtxDelete").disabled=!editable;$("boardCtxNote").disabled=!editable;$("boardCtxPhoto").disabled=!editable;$("boardCtxViewPhoto").disabled=!o.photoPath;m.classList.add('open');
   const w=250,h=210;m.style.left=Math.max(8,Math.min(clientX+6,innerWidth-w-8))+'px';m.style.top=Math.max(8,Math.min(clientY+6,innerHeight-h-8))+'px'
 }
 function hideBoardMenu(){$("boardContextMenu").classList.remove('open')}
@@ -1515,15 +1655,34 @@ function showBoardTooltip(o,clientX,clientY){
   t.style.left=Math.max(8,Math.min(clientX+10,innerWidth-315))+"px";t.style.top=Math.max(8,clientY-70)+"px";t.classList.add("show")
 }
 function hideBoardTooltip(){$("boardObjectTooltip").classList.remove("show")}
+$("boardCtxInfo").onclick=async()=>{
+  const o=boardItem(selectedBoardId);if(!o)return;hideBoardMenu();
+  await openObjectViewer({
+    title:boardTypeName(o),
+    note:o.note||"",
+    owner:o.ownerName||"",
+    photoPath:o.photoPath||"",
+    mode:"info"
+  })
+};
 $("boardCtxNote").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;const v=prompt(`編輯「${boardTypeName(o)}」備註：`,o.note||"");if(v===null)return;pushBoardHistory();o.note=v.trim();hideBoardMenu();publish();renderBoard();toast("備註已更新")};
 let boardObjectPhotoTargetId=null;
 $("boardCtxPhoto").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;boardObjectPhotoTargetId=o.id;$("boardObjectPhotoInput").value='';$("boardObjectPhotoInput").click()};
 $("boardObjectPhotoInput").onchange=async e=>{
   const file=e.target.files?.[0],o=boardItem(boardObjectPhotoTargetId);if(!file||!o)return;
-  try{toast("照片上傳中…");const old=o.photoPath,path=await uploadObjectMedia(file,o.ownerId||currentUserId);pushBoardHistory();o.photoPath=path;publish();renderBoard();hideBoardMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  try{toast(`照片壓縮與上傳中… ${(file.size/1024/1024).toFixed(1)} MB`);const old=o.photoPath,path=await uploadObjectMedia(file,o.ownerId||currentUserId);pushBoardHistory();o.photoPath=path;publish();renderBoard();hideBoardMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
   catch(err){toast("照片上傳失敗："+err.message)}finally{boardObjectPhotoTargetId=null;e.target.value=''}
 };
-$("boardCtxViewPhoto").onclick=async()=>{const o=boardItem(selectedBoardId);if(!o?.photoPath)return;hideBoardMenu();try{window.open(await signedObjectMediaUrl(o.photoPath),'_blank')}catch(err){toast("照片開啟失敗："+err.message)}};
+$("boardCtxViewPhoto").onclick=async()=>{
+  const o=boardItem(selectedBoardId);if(!o?.photoPath)return;hideBoardMenu();
+  await openObjectViewer({
+    title:`${boardTypeName(o)} · 照片`,
+    note:o.note||"",
+    owner:o.ownerName||"",
+    photoPath:o.photoPath,
+    mode:"photo"
+  })
+};
 
 $("boardCtxDone").onclick=()=>{selectedBoardId=null;hideBoardMenu();renderBoard()};
 $("boardCtxDelete").onclick=async()=>{
@@ -1747,16 +1906,7 @@ $("chatPhotoInput").onchange=e=>{
   $("chatPhotoPreview").classList.remove("hidden")
 };
 async function compressChatPhoto(file){
-  const dataUrl=await new Promise((resolve,reject)=>{
-    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error("照片讀取失敗"));r.readAsDataURL(file)
-  });
-  const img=await new Promise((resolve,reject)=>{
-    const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error("照片解析失敗"));i.src=dataUrl
-  });
-  const max=1600;let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
-  if(w>max){h=Math.round(h*max/w);w=max}if(h>max){w=Math.round(w*max/h);h=max}
-  const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
-  return await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error("照片壓縮失敗")),"image/jpeg",.78))
+  return await compressImageFile(file,1600,.78)
 }
 async function sendChat(){
   if(!can('chat')){toast('觀察員只能觀看');return}

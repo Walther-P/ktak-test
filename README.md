@@ -1,14 +1,19 @@
-# KTAK V1.8.1 Online
+# KTAK V1.8.2 Online
 
-修正：
-- 修正 V1.8 地圖備註 / 查看資訊 / 滑鼠提示 / 物件照片全部失效的共同根因
-- 物件附件 JavaScript 已移回正確 script 區段
-- 地圖「查看資訊」可直接顯示備註與附件照片
-- 車輛快速選擇：巡邏車、偵防車、警備車，可直接輸入台數
-- 裝備快速選擇改成數量模式，依項目顯示面 / 支 / 發 / 台 / 組
-- 保留其他車輛與其他裝備自訂名稱、數量、單位
+重點修正
+1. 圖片上傳：
+   - 桌面版優先使用 createImageBitmap 直接解碼檔案，避免 FileReader/Base64 額外複製。
+   - iOS 保留相容性較好的 FileReader fallback。
+   - 新增的「地圖照片標示」改存 ktak-object-media，不再把 Base64 圖片塞進 Postgres JSON。
+2. 任務地圖：
+   - 查看照片改成站內大圖檢視，不再開新分頁。
+   - 舊版 dataUrl 照片仍可查看。
+3. 戰術板：
+   - 新增「查看資訊」。
+   - 查看資訊可顯示名稱、備註、建立者及照片。
+   - 查看照片改成站內大圖檢視。
 
-更新既有 V1.8：
-1. 不需要再執行新的 Supabase SQL（前提：V1.8 PATCH 已成功執行）
-2. GitHub 覆蓋 index.html、sw.js、manifest.webmanifest
-3. 不要覆蓋現有 config.js
+既有 V1.8.1 升級
+- 不需要再執行 Supabase SQL（V1.8 PATCH 已執行即可）。
+- GitHub 覆蓋 index.html、sw.js、manifest.webmanifest。
+- 保留現有 config.js。
