@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#0b1115">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,7 +13,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.8.2 Online</title>
+<title>KTAK Mission Room V1.9 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -301,7 +304,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 }
 .objectViewer.open{display:flex}
 .objectViewerCard{
-  width:min(760px,96vw);max-height:92vh;overflow:auto;
+  width:min(980px,96vw);max-height:94vh;overflow:auto;
   background:#0f191f;border:1px solid #486371;border-radius:16px;
   box-shadow:0 18px 60px #000d;padding:14px
 }
@@ -318,7 +321,14 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   overflow:hidden
 }
 .objectViewerImage{
-  display:block;max-width:100%;max-height:72vh;width:auto;height:auto;object-fit:contain
+  display:block;max-width:100%;max-height:82vh;width:auto;height:auto;object-fit:contain;
+  cursor:zoom-in;transition:transform .12s ease
+}
+.objectViewerImage.zoomed{
+  max-width:none;max-height:none;width:auto;height:auto;cursor:zoom-out
+}
+.objectViewerImageWrap.zoomed{
+  display:block;overflow:auto;max-height:82vh
 }
 .objectViewerEmpty{padding:30px 12px;color:#879ca7;text-align:center;font-size:12px}
 .uploadPerfHint{font-size:10px;color:#8fa6b1;margin-top:5px}
@@ -328,7 +338,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8.2 · 圖片檢視與上傳優化版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9 · 圖片互動修正版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -448,7 +458,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
     <button id="mapCtxInfo">查看資訊</button>
     <button id="mapCtxNote">編輯備註</button>
     <button id="mapCtxPhoto">加入／更換照片</button>
-    <button id="mapCtxViewPhoto">查看照片</button>
+    <button id="mapCtxViewPhoto">查看照片（大圖）</button>
     <button id="mapCtxDirection">方向／觀察扇形</button>
     <button id="mapCtxDirectionClear">清除方向</button>
     <button id="mapCtxDelete" class="danger">刪除物件</button>
@@ -472,7 +482,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
     <button id="boardCtxDone">完成調整</button>
     <button id="boardCtxNote">編輯備註</button>
     <button id="boardCtxPhoto">加入／更換照片</button>
-    <button id="boardCtxViewPhoto">查看照片</button>
+    <button id="boardCtxViewPhoto">查看照片（大圖）</button>
     <button id="boardCtxDelete" class="danger">刪除物件</button>
   </div>
   <div class="ctxHint">拖曳物件＝移動；按住 1 秒＝顯示／關閉調整框；拖曳右下角 ↻ 把手可同時旋轉與縮放。</div>
@@ -499,6 +509,24 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* V1.9: this app requires a live backend, so stale offline HTML is more harmful than useful.
+   Retire old KTAK service workers/caches once V1.9 itself has loaded. */
+(async()=>{
+  try{
+    if("serviceWorker" in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.filter(k=>k.startsWith("ktak-")).map(k=>caches.delete(k)));
+    }
+  }catch(e){console.warn("KTAK cache retirement",e)}
+})();
+</script>
+
 <script>
 (() => {
 "use strict";
@@ -896,7 +924,7 @@ $("briefSaveBtn").onclick=()=>{
 };
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8.2",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -915,8 +943,8 @@ $("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTA
 /* in-app object viewer */
 function closeObjectViewer(){
   const v=$("objectViewer");v.classList.remove("open");v.setAttribute("aria-hidden","true");
-  $("objectViewerImage").classList.add("hidden");$("objectViewerImage").removeAttribute("src");
-  $("objectViewerEmpty").classList.remove("hidden")
+  $("objectViewerImage").classList.add("hidden");$("objectViewerImage").classList.remove("zoomed");$("objectViewerImage").removeAttribute("src");
+  $("objectViewerImageWrap").classList.remove("zoomed");$("objectViewerEmpty").classList.remove("hidden")
 }
 async function openObjectViewer({title="資訊",note="",owner="",photoUrl="",photoPath="",mode="info"}){
   $("objectViewerTitle").textContent=title;
@@ -926,7 +954,7 @@ async function openObjectViewer({title="資訊",note="",owner="",photoUrl="",pho
   if(owner)bits.push(`<small>建立者：${escapeHtml(owner)}</small>`);
   $("objectViewerMeta").innerHTML=bits.join("<br>");
   const img=$("objectViewerImage"),empty=$("objectViewerEmpty");
-  img.classList.add("hidden");img.removeAttribute("src");empty.classList.remove("hidden");
+  img.classList.add("hidden");img.classList.remove("zoomed");$("objectViewerImageWrap").classList.remove("zoomed");img.removeAttribute("src");empty.classList.remove("hidden");
   try{
     let u=photoUrl||"";
     if(!u&&photoPath)u=await signedObjectMediaUrl(photoPath);
@@ -940,43 +968,111 @@ async function openObjectViewer({title="資訊",note="",owner="",photoUrl="",pho
   }
   const v=$("objectViewer");v.classList.add("open");v.setAttribute("aria-hidden","false")
 }
+$("objectViewerImage").onclick=()=>{
+  const img=$("objectViewerImage"),wrap=$("objectViewerImageWrap");
+  const z=!img.classList.contains("zoomed");
+  img.classList.toggle("zoomed",z);wrap.classList.toggle("zoomed",z)
+};
 $("objectViewerClose").onclick=closeObjectViewer;
 $("objectViewer").addEventListener("click",e=>{if(e.target===$("objectViewer"))closeObjectViewer()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeObjectViewer()});
 
-/* adaptive photo compression: desktop uses direct ImageBitmap decode when available,
-   iOS/Safari keeps the compatible FileReader fallback */
+/* V1.9 adaptive photo compression
+   Desktop:
+   1. Use an object URL only to read dimensions.
+   2. Ask createImageBitmap to decode directly near the target size.
+   3. Canvas -> JPEG.
+   This avoids creating an unnecessary Base64 copy and reduces memory work for large Windows photos.
+   iOS/Safari keeps a conservative Image fallback. */
 function isIOSLike(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1)
 }
-async function loadImageSource(file){
-  if(!isIOSLike() && "createImageBitmap" in window){
-    try{
-      const bitmap=await createImageBitmap(file);
-      return {source:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()}
-    }catch(e){console.warn("createImageBitmap fallback",e)}
+function fmtBytes(n){
+  if(!Number.isFinite(n))return "";
+  if(n<1024)return `${n} B`;
+  if(n<1024*1024)return `${(n/1024).toFixed(0)} KB`;
+  return `${(n/1024/1024).toFixed(1)} MB`
+}
+async function imageDimensionsFromObjectUrl(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((resolve,reject)=>{
+      const i=new Image();
+      i.onload=()=>resolve(i);
+      i.onerror=()=>reject(new Error("照片尺寸讀取失敗"));
+      i.src=url
+    });
+    return {width:img.naturalWidth||img.width,height:img.naturalHeight||img.height}
+  }finally{
+    URL.revokeObjectURL(url)
   }
-  const dataUrl=await new Promise((resolve,reject)=>{
-    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error("照片讀取失敗"));r.readAsDataURL(file)
-  });
-  const img=await new Promise((resolve,reject)=>{
-    const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error("照片解析失敗"));i.src=dataUrl
-  });
-  return {source:img,width:img.naturalWidth||img.width,height:img.naturalHeight||img.height,close:()=>{}}
+}
+async function decodeDesktopResized(file,targetW,targetH){
+  if(!("createImageBitmap" in window))return null;
+  try{
+    const bitmap=await createImageBitmap(file,{
+      resizeWidth:targetW,
+      resizeHeight:targetH,
+      resizeQuality:"high"
+    });
+    return {source:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()}
+  }catch(err){
+    console.warn("direct resized createImageBitmap fallback",err);
+    return null
+  }
+}
+async function decodeImageFallback(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((resolve,reject)=>{
+      const i=new Image();
+      i.onload=()=>resolve(i);
+      i.onerror=()=>reject(new Error("照片解析失敗"));
+      i.src=url
+    });
+    return {source:img,width:img.naturalWidth||img.width,height:img.naturalHeight||img.height,close:()=>{}}
+  }finally{
+    // Object URL must stay alive until Image loaded; after onload it is safe to revoke.
+    URL.revokeObjectURL(url)
+  }
 }
 async function compressImageFile(file,max=1600,quality=.78){
-  const decoded=await loadImageSource(file);
+  const started=performance.now();
+  const dims=await imageDimensionsFromObjectUrl(file);
+  const scale=Math.min(1,max/dims.width,max/dims.height);
+  const targetW=Math.max(1,Math.round(dims.width*scale));
+  const targetH=Math.max(1,Math.round(dims.height*scale));
+
+  let decoded=null;
+  if(!isIOSLike())decoded=await decodeDesktopResized(file,targetW,targetH);
+  if(!decoded)decoded=await decodeImageFallback(file);
+
   try{
-    let w=decoded.width,h=decoded.height;
-    const scale=Math.min(1,max/w,max/h);
-    w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
-    const c=document.createElement("canvas");c.width=w;c.height=h;
-    const cx=c.getContext("2d",{alpha:false});cx.drawImage(decoded.source,0,0,w,h);
-    return await new Promise((resolve,reject)=>
+    const c=document.createElement("canvas");
+    c.width=targetW;c.height=targetH;
+    const cx=c.getContext("2d",{alpha:false,desynchronized:true});
+    cx.drawImage(decoded.source,0,0,targetW,targetH);
+    const blob=await new Promise((resolve,reject)=>
       c.toBlob(b=>b?resolve(b):reject(new Error("照片壓縮失敗")),"image/jpeg",quality)
-    )
-  }finally{decoded.close()}
+    );
+    return {
+      blob,
+      originalBytes:file.size,
+      compressedBytes:blob.size,
+      originalWidth:dims.width,
+      originalHeight:dims.height,
+      width:targetW,
+      height:targetH,
+      ms:Math.round(performance.now()-started)
+    }
+  }finally{
+    decoded.close?.()
+  }
+}
+async function compressChatPhoto(file){
+  const r=await compressImageFile(file,1600,.78);
+  return r.blob
 }
 
 /* object media */
@@ -994,13 +1090,27 @@ async function signedObjectMediaUrl(path){
 async function uploadObjectMedia(file,ownerId=currentUserId){
   if(!file?.type?.startsWith("image/"))throw new Error("請選擇圖片");
   if(file.size>20*1024*1024)throw new Error("原始照片請小於 20MB");
-  const blob=await compressChatPhoto(file);
+
+  const totalStart=performance.now();
+  toast(`照片處理中… 原始 ${fmtBytes(file.size)}`);
+  const packed=await compressImageFile(file,1600,.78);
+  toast(`已壓縮 ${fmtBytes(packed.originalBytes)} → ${fmtBytes(packed.compressedBytes)}（${packed.ms} ms），正在上傳…`);
+
   const path=`${currentRoomUuid}/${ownerId||currentUserId}/${safeUuid()}.jpg`;
+  const uploadStart=performance.now();
   const {error}=await sb.storage.from("ktak-object-media").upload(
-    path,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false}
+    path,packed.blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false}
   );
   if(error)throw error;
-  return path
+
+  return {
+    path,
+    originalBytes:packed.originalBytes,
+    compressedBytes:packed.compressedBytes,
+    compressMs:packed.ms,
+    uploadMs:Math.round(performance.now()-uploadStart),
+    totalMs:Math.round(performance.now()-totalStart)
+  }
 }
 async function removeObjectMedia(path){
   if(!path)return;
@@ -1224,13 +1334,14 @@ let mapObjectPhotoTargetId=null;
 $("mapCtxPhoto").onclick=()=>{const item=itemById(selectedMapId);if(!item||!canEditItem(item)||item.type==='photo')return;mapObjectPhotoTargetId=item.id;$("mapObjectPhotoInput").value='';$("mapObjectPhotoInput").click()};
 $("mapObjectPhotoInput").onchange=async e=>{
   const file=e.target.files?.[0],item=itemById(mapObjectPhotoTargetId);if(!file||!item)return;
-  try{toast(`照片壓縮與上傳中… ${(file.size/1024/1024).toFixed(1)} MB`);const old=item.photoPath,path=await uploadObjectMedia(file,item.ownerId||currentUserId);pushMapHistory();item.photoPath=path;publish();renderMapItems();hideMapMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  try{const old=item.photoPath,res=await uploadObjectMedia(file,item.ownerId||currentUserId);pushMapHistory();item.photoPath=res.path;publish();renderMapItems();hideMapMenu();if(old&&old!==res.path)await removeObjectMedia(old);toast(`照片已加入：${fmtBytes(res.compressedBytes)}，總耗時 ${(res.totalMs/1000).toFixed(1)} 秒`)}
   catch(err){toast("照片上傳失敗："+err.message)}finally{mapObjectPhotoTargetId=null;e.target.value=''}
 };
 $("mapCtxViewPhoto").onclick=async()=>{
-  const item=itemById(selectedMapId);if(!item)return;hideMapMenu();
+  const item=itemById(selectedMapId);if(!item)return;
+  hideMapMenu();
   await openObjectViewer({
-    title:`${mapItemTypeName(item)} · 照片`,
+    title:`${mapItemTypeName(item)} · 大圖`,
     note:item.note||"",
     owner:item.ownerName||"",
     photoUrl:item.type==='photo'&&item.dataUrl?item.dataUrl:"",
@@ -1410,10 +1521,10 @@ map.on('click',async e=>{
     pendingPhoto=null;$("photoInput").value='';$("photoLabel").value='';
     map.getContainer().style.cursor='wait';toast("照片壓縮與上傳中…");
     try{
-      const path=await uploadObjectMedia(file,currentUserId);
+      const res=await uploadObjectMedia(file,currentUserId);
       pushMapHistory();
-      state.map.items.push({id:uid(),type:'photo',lat,lng,photoPath:path,label,rotation:0,scale:1,fan:null,note:"",ownerId:currentUserId,ownerName:displayName()});
-      publish();renderMapItems();setMapTool('pan');toast("照片已放置")
+      state.map.items.push({id:uid(),type:'photo',lat,lng,photoPath:res.path,label,rotation:0,scale:1,fan:null,note:"",ownerId:currentUserId,ownerName:displayName()});
+      publish();renderMapItems();setMapTool('pan');toast(`照片已放置：${fmtBytes(res.compressedBytes)}，總耗時 ${(res.totalMs/1000).toFixed(1)} 秒`)
     }catch(err){
       console.error(err);setMapTool('pan');toast("照片上傳失敗："+(err.message||"未知錯誤"))
     }
@@ -1656,7 +1767,8 @@ function showBoardTooltip(o,clientX,clientY){
 }
 function hideBoardTooltip(){$("boardObjectTooltip").classList.remove("show")}
 $("boardCtxInfo").onclick=async()=>{
-  const o=boardItem(selectedBoardId);if(!o)return;hideBoardMenu();
+  const o=boardItem(selectedBoardId);if(!o)return;
+  hideBoardMenu();
   await openObjectViewer({
     title:boardTypeName(o),
     note:o.note||"",
@@ -1670,13 +1782,14 @@ let boardObjectPhotoTargetId=null;
 $("boardCtxPhoto").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;boardObjectPhotoTargetId=o.id;$("boardObjectPhotoInput").value='';$("boardObjectPhotoInput").click()};
 $("boardObjectPhotoInput").onchange=async e=>{
   const file=e.target.files?.[0],o=boardItem(boardObjectPhotoTargetId);if(!file||!o)return;
-  try{toast(`照片壓縮與上傳中… ${(file.size/1024/1024).toFixed(1)} MB`);const old=o.photoPath,path=await uploadObjectMedia(file,o.ownerId||currentUserId);pushBoardHistory();o.photoPath=path;publish();renderBoard();hideBoardMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  try{const old=o.photoPath,res=await uploadObjectMedia(file,o.ownerId||currentUserId);pushBoardHistory();o.photoPath=res.path;publish();renderBoard();hideBoardMenu();if(old&&old!==res.path)await removeObjectMedia(old);toast(`照片已加入：${fmtBytes(res.compressedBytes)}，總耗時 ${(res.totalMs/1000).toFixed(1)} 秒`)}
   catch(err){toast("照片上傳失敗："+err.message)}finally{boardObjectPhotoTargetId=null;e.target.value=''}
 };
 $("boardCtxViewPhoto").onclick=async()=>{
-  const o=boardItem(selectedBoardId);if(!o?.photoPath)return;hideBoardMenu();
+  const o=boardItem(selectedBoardId);if(!o?.photoPath)return;
+  hideBoardMenu();
   await openObjectViewer({
-    title:`${boardTypeName(o)} · 照片`,
+    title:`${boardTypeName(o)} · 大圖`,
     note:o.note||"",
     owner:o.ownerName||"",
     photoPath:o.photoPath,
@@ -1905,9 +2018,7 @@ $("chatPhotoInput").onchange=e=>{
   const u=URL.createObjectURL(f);$("chatPhotoPreviewImg").src=u;$("chatPhotoPreviewImg").onload=()=>URL.revokeObjectURL(u);
   $("chatPhotoPreview").classList.remove("hidden")
 };
-async function compressChatPhoto(file){
-  return await compressImageFile(file,1600,.78)
-}
+
 async function sendChat(){
   if(!can('chat')){toast('觀察員只能觀看');return}
   const t=$("chatInput").value.trim(),photo=pendingChatPhoto;if(!t&&!photo)return;
