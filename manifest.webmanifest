@@ -1,6 +1,6 @@
 {
-  "name": "KTAK Mission Room V1.8 Online",
-  "short_name": "KTAK V1.8",
+  "name": "KTAK Mission Room V1.8.1 Online",
+  "short_name": "KTAK V1.8.1",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

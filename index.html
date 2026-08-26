@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.8 Online</title>
+<title>KTAK Mission Room V1.8.1 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -23,28 +23,6 @@ header{min-height:54px;padding:calc(8px + var(--safeTop)) 12px 8px;background:#0
 .brand{display:flex;align-items:center;gap:9px;min-width:0}.logo{width:35px;height:35px;border-radius:10px;display:grid;place-items:center;background:#173548;border:1px solid #38749b;font-weight:900}.brandText b{display:block;font-size:14px}.brandText small{color:var(--muted);font-size:11px}.roomStatus{display:flex;align-items:center;gap:7px;font-size:12px;color:#c7d6dd;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px #55d57288}
 nav{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:7px 10px;background:#10191f;border-bottom:1px solid var(--line);z-index:45}nav button{padding:10px 5px;font-size:12px;background:#151f26}nav button.active{background:#164058;border-color:#2a82b3;outline:1px solid var(--blue)}
 main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:100%;overflow:auto}.page.active{display:block}.shell{max-width:1200px;margin:0 auto;padding:14px}.card{background:#121d24;border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:12px;box-shadow:0 4px 14px #0003}.card h2{font-size:15px;margin:0 0 10px}.card h3{font-size:13px;margin:0 0 8px;color:#d4e4ec}.muted{color:var(--muted);font-size:11px;line-height:1.5}.row{display:flex;gap:8px}.row>*{min-width:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.label{font-size:11px;color:#b5c6cf;margin:2px 0 5px}.valueBox{background:#0c1419;border:1px solid #2d414c;border-radius:9px;padding:10px;min-height:39px;white-space:pre-wrap}.sectionTitle{font-weight:850;font-size:18px;margin:4px 0 14px}.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#1a2a32;border:1px solid #3a4f5a;font-size:11px;color:#cedce2}.flexBetween{display:flex;align-items:center;justify-content:space-between;gap:8px}.roleBadge{font-size:10px;border-radius:999px;padding:3px 7px;background:#173348;border:1px solid #2d6688}
-/* object media */
-let objectMediaUrlCache=new Map();
-async function signedObjectMediaUrl(path){
-  if(!path)return null;const c=objectMediaUrlCache.get(path);
-  if(c&&c.expires>Date.now()+60000)return c.url;
-  const {data,error}=await sb.storage.from("ktak-object-media").createSignedUrl(path,3600);
-  if(error)throw error;objectMediaUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+3500000});return data.signedUrl
-}
-async function uploadObjectMedia(file,ownerId=currentUserId){
-  if(!file?.type?.startsWith("image/"))throw new Error("請選擇圖片");
-  if(file.size>20*1024*1024)throw new Error("原始照片請小於 20MB");
-  const blob=await compressChatPhoto(file),path=`${currentRoomUuid}/${ownerId||currentUserId}/${safeUuid()}.jpg`;
-  const {error}=await sb.storage.from("ktak-object-media").upload(path,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
-  if(error)throw error;return path
-}
-async function removeObjectMedia(path){if(!path)return;const {error}=await sb.storage.from("ktak-object-media").remove([path]);if(error)console.warn(error)}
-function mapItemTypeName(item){
-  if(item.type==='symbol')return item.label||allIconDefs[item.icon]?.[1]||'圖樣';
-  if(item.type==='photo')return item.label||'照片標示';
-  return item.type==='line'?'直線':item.type==='rect'?'方形':item.type==='circle'?'圓形':item.type==='free'?'隨意畫筆':'地圖物件'
-}
-
 /* map */
 #mapPage{overflow:hidden}.mapLayout{height:100%;display:grid;grid-template-columns:340px 1fr}.mapSidebar{background:#10191f;border-right:1px solid var(--line);padding:10px;overflow:auto}#map{height:100%;width:100%;background:#0e1519}.toolGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.toolGrid button.active{outline:2px solid var(--blue);background:#19445c}.iconGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.iconGrid button{font-size:11px;padding:8px 6px}.iconGrid button.active{outline:2px solid var(--yellow)}.searchRow{display:grid;grid-template-columns:1fr auto;gap:6px}.leaflet-container{font-family:inherit}.leaflet-control-zoom a{background:#142027!important;color:white!important;border-color:#30414b!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#121d24;color:#eef5f8}.tac-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#152129;border:2px solid white;box-shadow:0 3px 10px #000a;font-size:18px}.tac-inner{display:grid;place-items:center;width:100%;height:100%;transform-origin:center}.photoPin{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:#2b2236;border:2px solid #fff;box-shadow:0 3px 10px #000a;font-size:18px}.photoThumb{max-width:240px;max-height:180px;border-radius:8px;display:block;margin-top:7px}#mapHint{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px}.mapTopMobile{display:none}.palette{display:flex;gap:6px;flex-wrap:wrap}.colorDot{width:30px;height:30px;border-radius:50%;border:2px solid #fff;padding:0}.colorDot.active{outline:3px solid var(--blue);outline-offset:2px}.objectEditor{border:1px solid #496171;background:#0e181e}.objectEditor .row button{flex:1}.mapPopupActions{display:flex;gap:5px;margin-top:7px}.mapPopupActions button{font-size:11px;padding:5px 7px}.customIconPreview{font-size:25px;text-align:center;padding:6px}
 /* board */
@@ -285,12 +263,41 @@ function mapItemTypeName(item){
 #boardObjectTooltip{position:fixed;z-index:6200;max-width:min(300px,calc(100vw - 24px));padding:8px 10px;border-radius:9px;background:rgba(10,17,22,.97);border:1px solid #496575;color:#eef6f9;box-shadow:0 6px 18px #0009;font-size:11px;line-height:1.45;pointer-events:none;display:none}
 #boardObjectTooltip.show{display:block}
 .ctxGrid3{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+
+/* V1.8.1 vehicle/equipment quantity editor */
+.qtyQuickList{display:grid;gap:7px;margin-top:8px}
+.qtyQuickRow{
+  display:grid;grid-template-columns:minmax(115px,1fr) 82px 34px;
+  gap:7px;align-items:center;padding:7px;border:1px solid #304651;
+  border-radius:10px;background:#0d171c
+}
+.qtyQuickRow button{font-size:11px;text-align:left;padding:8px}
+.qtyQuickRow button.active{background:#164f6d;border-color:#45aff2;outline:1px solid #45aff2}
+.qtyQuickRow input{padding:8px;text-align:center}
+.qtyUnit{font-size:11px;color:#c8d7de;text-align:center}
+.qtyCustomRow{
+  display:grid;grid-template-columns:minmax(120px,1fr) 74px 62px auto;
+  gap:6px;align-items:center;margin-top:8px
+}
+.qtySelected{display:grid;gap:5px;margin-top:8px}
+.qtyChip{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:7px 9px;border:1px solid #395361;border-radius:9px;background:#15242c;
+  font-size:11px
+}
+.qtyChip button{padding:3px 7px;background:#5b2929;border-color:#834040}
+@media(max-width:600px){
+  .qtyQuickRow{grid-template-columns:minmax(105px,1fr) 72px 28px}
+  .qtyCustomRow{grid-template-columns:1fr 70px 58px}
+  .qtyCustomRow button{grid-column:1/-1}
+}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8 · 任務資訊強化版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8.1 · 任務資訊修正版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -323,12 +330,34 @@ function mapItemTypeName(item){
   </div></div>
   <div class="card"><h2>現場目前情況</h2><textarea class="briefInput" id="situationSummary" placeholder="現場目前狀況、嫌疑人動向、封鎖情形、已知風險、其他即時概述"></textarea><div class="valueBox briefView hidden" id="situationSummaryView"></div></div>
   <div class="card"><h2>車輛與裝備</h2>
-    <div><div class="label">本次出動車輛</div><textarea class="briefInput" id="vehicles" placeholder="自行輸入，例如：指揮車、攻堅車、偵防車、救護車等"></textarea><div class="valueBox briefView hidden" id="vehiclesView"></div></div>
-    <div style="margin-top:12px"><div class="label">本次裝備</div>
+    <div>
+      <div class="label">本次出動車輛</div>
+      <div id="vehicleEditor" class="briefInput">
+        <div class="muted">點選車種即可加入，再直接輸入台數。</div>
+        <div id="vehicleQuick" class="qtyQuickList"></div>
+        <div class="qtyCustomRow">
+          <input id="vehicleCustomName" placeholder="其他車輛名稱">
+          <input id="vehicleCustomQty" type="number" min="1" value="1" inputmode="numeric">
+          <input id="vehicleCustomUnit" value="台" placeholder="單位">
+          <button id="vehicleAddBtn">＋ 新增</button>
+        </div>
+        <div id="vehicleCustomSelected" class="qtySelected"></div>
+      </div>
+      <div class="valueBox briefView hidden" id="vehiclesView"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <div class="label">本次裝備</div>
       <div id="equipmentEditor" class="briefInput">
-        <div class="equipQuick" id="equipmentQuick"></div>
-        <div class="row" style="margin-top:8px"><input id="equipmentCustomInput" placeholder="自行新增其他裝備"><button id="equipmentAddBtn">＋ 新增</button></div>
-        <div class="equipSelected" id="equipmentSelected"></div>
+        <div class="muted">點選裝備即可加入，右側直接輸入數量。</div>
+        <div id="equipmentQuick" class="qtyQuickList"></div>
+        <div class="qtyCustomRow">
+          <input id="equipmentCustomName" placeholder="其他裝備名稱">
+          <input id="equipmentCustomQty" type="number" min="1" value="1" inputmode="numeric">
+          <input id="equipmentCustomUnit" value="件" placeholder="單位">
+          <button id="equipmentAddBtn">＋ 新增</button>
+        </div>
+        <div id="equipmentCustomSelected" class="qtySelected"></div>
       </div>
       <div class="valueBox briefView hidden" id="equipmentView"></div>
     </div>
@@ -429,7 +458,7 @@ function mapItemTypeName(item){
 const $=id=>document.getElementById(id), $$=sel=>Array.from(document.querySelectorAll(sel));
 const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16)), now=()=>new Date().toISOString(), clone=o=>JSON.parse(JSON.stringify(o));
 const roles={commander:"指揮官權限",tactical:"特勤人員",recon:"偵查隊",observer:"觀察員"};
-const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",situationSummary:"",vehicles:"",equipment:[],missionNotes:""});
+const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",situationSummary:"",vehicles:[],equipment:[],missionNotes:""});
 const defaultBoard=()=>({pages:[],active:0,canvasW:2000,canvasH:1400});
 let roomId="",currentRoomUuid="",currentUserId="",presence={},state=null;
 let sb=null,roomChannel=null,onlineReady=false,syncChain=Promise.resolve(),syncSnapshot={brief:null,map:null,board:null};
@@ -668,43 +697,159 @@ $("leaveBtn").onclick=async()=>{try{if(roomChannel&&sb)await sb.removeChannel(ro
 $$('.navBtn').forEach(b=>b.onclick=()=>{if(b.id==="permissionTab"&&!can("permission"))return;$$('.navBtn').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='mapPage')setTimeout(()=>map.invalidateSize(),60);if(b.dataset.page==='boardPage')setTimeout(renderBoard,30);if(b.dataset.page==='chatPage')renderChat();if(b.dataset.page==='permissionPage')renderPermissions()});
 
 /* brief */
-const briefIds=["caseType","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","civilianCount","teamComposition","situationSummary","vehicles","missionNotes"];
-const equipmentOptions=["III級盾牌","IIIA級盾牌","步槍","衝鋒槍","狙擊槍","9MM子彈","5.56步槍彈","7.62步槍彈","無線電","MPolice","電驅油壓破門器","電驅破壞剪","背負式破門器材組"];
-let briefEditing=false,equipmentDraft=[];
-function renderEquipmentEditor(){
-  $("equipmentQuick").innerHTML='';
-  equipmentOptions.forEach(name=>{
-    const b=document.createElement('button');b.type='button';b.textContent=name;b.classList.toggle('active',equipmentDraft.includes(name));
-    b.onclick=()=>{equipmentDraft.includes(name)?equipmentDraft=equipmentDraft.filter(x=>x!==name):equipmentDraft.push(name);renderEquipmentEditor()};
-    $("equipmentQuick").appendChild(b)
-  });
-  $("equipmentSelected").innerHTML='';
-  equipmentDraft.forEach(name=>{
-    const chip=document.createElement('span');chip.className='equipChip';chip.append(document.createTextNode(name));
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{equipmentDraft=equipmentDraft.filter(v=>v!==name);renderEquipmentEditor()};
-    chip.appendChild(x);$("equipmentSelected").appendChild(chip)
+const briefIds=["caseType","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","civilianCount","teamComposition","situationSummary","missionNotes"];
+
+const vehicleOptions=[
+  {name:"巡邏車",unit:"台"},
+  {name:"偵防車",unit:"台"},
+  {name:"警備車",unit:"台"}
+];
+
+const equipmentOptions=[
+  {name:"III級盾牌",unit:"面"},
+  {name:"IIIA級盾牌",unit:"面"},
+  {name:"步槍",unit:"支"},
+  {name:"衝鋒槍",unit:"支"},
+  {name:"狙擊槍",unit:"支"},
+  {name:"9MM子彈",unit:"發"},
+  {name:"5.56步槍彈",unit:"發"},
+  {name:"7.62步槍彈",unit:"發"},
+  {name:"無線電",unit:"台"},
+  {name:"MPolice",unit:"台"},
+  {name:"電驅油壓破門器",unit:"組"},
+  {name:"電驅破壞剪",unit:"組"},
+  {name:"背負式破門器材組",unit:"組"}
+];
+
+let briefEditing=false,vehicleDraft=[],equipmentDraft=[];
+
+function optionUnit(name,options,fallback="件"){
+  return options.find(x=>x.name===name)?.unit||fallback
+}
+function normalizeQtyList(raw,options,fallbackUnit){
+  if(Array.isArray(raw)){
+    return raw.map(x=>{
+      if(typeof x==="string")return {name:x,qty:1,unit:optionUnit(x,options,fallbackUnit)};
+      if(x&&typeof x==="object"){
+        const name=String(x.name||x.label||"").trim();
+        if(!name)return null;
+        return {name,qty:Math.max(1,Number(x.qty||x.count||1)||1),unit:String(x.unit||optionUnit(name,options,fallbackUnit)).trim()||fallbackUnit}
+      }
+      return null
+    }).filter(Boolean)
+  }
+  if(typeof raw==="string"&&raw.trim()){
+    return raw.split(/[\n、,，]+/).map(s=>s.trim()).filter(Boolean)
+      .map(name=>({name,qty:1,unit:optionUnit(name,options,fallbackUnit)}))
+  }
+  return []
+}
+function qtyText(list){
+  return list.length?list.map(x=>`${x.name} ${x.qty}${x.unit}`).join("、"):"—"
+}
+function getDraftItem(list,name){return list.find(x=>x.name===name)}
+function setDraftItem(list,name,qty,unit){
+  const i=list.findIndex(x=>x.name===name);
+  const item={name,qty:Math.max(1,Number(qty)||1),unit};
+  if(i>=0)list[i]=item;else list.push(item)
+}
+function removeDraftItem(list,name){
+  const i=list.findIndex(x=>x.name===name);if(i>=0)list.splice(i,1)
+}
+function renderQtyQuick(containerId,list,options,rerender){
+  const root=$(containerId);root.innerHTML="";
+  options.forEach(opt=>{
+    const current=getDraftItem(list,opt.name);
+    const row=document.createElement("div");row.className="qtyQuickRow";
+
+    const toggle=document.createElement("button");
+    toggle.type="button";toggle.textContent=opt.name;toggle.classList.toggle("active",!!current);
+    toggle.onclick=()=>{
+      if(getDraftItem(list,opt.name))removeDraftItem(list,opt.name);
+      else setDraftItem(list,opt.name,1,opt.unit);
+      rerender()
+    };
+
+    const qty=document.createElement("input");
+    qty.type="number";qty.min="1";qty.inputMode="numeric";
+    qty.value=current?.qty||1;qty.disabled=!current;
+    qty.onchange=()=>{
+      if(!getDraftItem(list,opt.name))return;
+      setDraftItem(list,opt.name,qty.value,opt.unit);rerender()
+    };
+    qty.oninput=()=>{
+      const it=getDraftItem(list,opt.name);
+      if(it)it.qty=Math.max(1,Number(qty.value)||1)
+    };
+
+    const unit=document.createElement("div");unit.className="qtyUnit";unit.textContent=opt.unit;
+    row.append(toggle,qty,unit);root.appendChild(row)
   })
 }
-$("equipmentAddBtn").onclick=()=>{const v=$("equipmentCustomInput").value.trim();if(!v)return;if(!equipmentDraft.includes(v))equipmentDraft.push(v);$("equipmentCustomInput").value='';renderEquipmentEditor()};
-$("equipmentCustomInput").addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$("equipmentAddBtn").click()}});
+function renderCustomItems(containerId,list,options,rerender){
+  const root=$(containerId);root.innerHTML="";
+  list.filter(x=>!options.some(o=>o.name===x.name)).forEach(item=>{
+    const row=document.createElement("div");row.className="qtyChip";
+    const text=document.createElement("span");text.textContent=`${item.name} ${item.qty}${item.unit}`;
+    const del=document.createElement("button");del.type="button";del.textContent="刪除";
+    del.onclick=()=>{removeDraftItem(list,item.name);rerender()};
+    row.append(text,del);root.appendChild(row)
+  })
+}
+function renderVehicleEditor(){
+  renderQtyQuick("vehicleQuick",vehicleDraft,vehicleOptions,renderVehicleEditor);
+  renderCustomItems("vehicleCustomSelected",vehicleDraft,vehicleOptions,renderVehicleEditor)
+}
+function renderEquipmentEditor(){
+  renderQtyQuick("equipmentQuick",equipmentDraft,equipmentOptions,renderEquipmentEditor);
+  renderCustomItems("equipmentCustomSelected",equipmentDraft,equipmentOptions,renderEquipmentEditor)
+}
+$("vehicleAddBtn").onclick=()=>{
+  const name=$("vehicleCustomName").value.trim();if(!name)return;
+  const qty=Math.max(1,Number($("vehicleCustomQty").value)||1);
+  const unit=$("vehicleCustomUnit").value.trim()||"台";
+  setDraftItem(vehicleDraft,name,qty,unit);
+  $("vehicleCustomName").value="";$("vehicleCustomQty").value="1";renderVehicleEditor()
+};
+$("equipmentAddBtn").onclick=()=>{
+  const name=$("equipmentCustomName").value.trim();if(!name)return;
+  const qty=Math.max(1,Number($("equipmentCustomQty").value)||1);
+  const unit=$("equipmentCustomUnit").value.trim()||"件";
+  setDraftItem(equipmentDraft,name,qty,unit);
+  $("equipmentCustomName").value="";$("equipmentCustomQty").value="1";renderEquipmentEditor()
+};
+$("vehicleCustomName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("vehicleAddBtn").click()}});
+$("equipmentCustomName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("equipmentAddBtn").click()}});
+
 function fillBrief(){
   briefIds.forEach(id=>{$(id).value=state.brief[id]??"";$(id+"View").textContent=state.brief[id]||"—"});
-  equipmentDraft=Array.isArray(state.brief.equipment)?[...state.brief.equipment]:[];
-  renderEquipmentEditor();$("equipmentView").textContent=equipmentDraft.length?equipmentDraft.join("、"):"—";
+  vehicleDraft=normalizeQtyList(state.brief.vehicles,vehicleOptions,"台");
+  equipmentDraft=normalizeQtyList(state.brief.equipment,equipmentOptions,"件");
+  renderVehicleEditor();renderEquipmentEditor();
+  $("vehiclesView").textContent=qtyText(vehicleDraft);
+  $("equipmentView").textContent=qtyText(equipmentDraft);
   $("executionOtherWrap").classList.toggle("hidden",state.brief.executionMode!=="其他"&&!briefEditing)
 }
 function setBriefEdit(on){
   if(on&&!can("brief")){toast("只有指揮官權限可編輯任務簡報");return}
-  briefEditing=on;$$('.briefInput').forEach(x=>x.classList.toggle('hidden',!on));$$('.briefView').forEach(x=>x.classList.toggle('hidden',on));
-  $("briefEditBtn").classList.toggle('hidden',on||!can("brief"));$("briefSaveBtn").classList.toggle('hidden',!on);
+  briefEditing=on;
+  $$('.briefInput').forEach(x=>x.classList.toggle('hidden',!on));
+  $$('.briefView').forEach(x=>x.classList.toggle('hidden',on));
+  $("briefEditBtn").classList.toggle('hidden',on||!can("brief"));
+  $("briefSaveBtn").classList.toggle('hidden',!on);
   $("executionOtherWrap").classList.toggle('hidden',!on&&state.brief.executionMode!=="其他")
 }
 $("executionMode").onchange=()=>$("executionOtherWrap").classList.toggle("hidden",$("executionMode").value!=="其他");
 $("briefEditBtn").onclick=()=>setBriefEdit(true);
-$("briefSaveBtn").onclick=()=>{briefIds.forEach(id=>state.brief[id]=$(id).value);state.brief.equipment=[...equipmentDraft];fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")};
+$("briefSaveBtn").onclick=()=>{
+  briefIds.forEach(id=>state.brief[id]=$(id).value);
+  state.brief.vehicles=vehicleDraft.map(x=>({...x}));
+  state.brief.equipment=equipmentDraft.map(x=>({...x}));
+  fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")
+};
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8.1",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -719,6 +864,43 @@ $("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTA
   }catch(err){alert("匯入失敗："+err.message)}
   e.target.value=""
 };
+
+/* object media */
+let objectMediaUrlCache=new Map();
+
+async function signedObjectMediaUrl(path){
+  if(!path)return null;
+  const c=objectMediaUrlCache.get(path);
+  if(c&&c.expires>Date.now()+60000)return c.url;
+  const {data,error}=await sb.storage.from("ktak-object-media").createSignedUrl(path,3600);
+  if(error)throw error;
+  objectMediaUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+3500000});
+  return data.signedUrl
+}
+async function uploadObjectMedia(file,ownerId=currentUserId){
+  if(!file?.type?.startsWith("image/"))throw new Error("請選擇圖片");
+  if(file.size>20*1024*1024)throw new Error("原始照片請小於 20MB");
+  const blob=await compressChatPhoto(file);
+  const path=`${currentRoomUuid}/${ownerId||currentUserId}/${safeUuid()}.jpg`;
+  const {error}=await sb.storage.from("ktak-object-media").upload(
+    path,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false}
+  );
+  if(error)throw error;
+  return path
+}
+async function removeObjectMedia(path){
+  if(!path)return;
+  const {error}=await sb.storage.from("ktak-object-media").remove([path]);
+  if(error)console.warn("remove object media",error)
+}
+function mapItemTypeName(item){
+  if(item.type==="symbol")return item.label||allIconDefs[item.icon]?.[1]||"圖樣";
+  if(item.type==="photo")return item.label||"照片標示";
+  return item.type==="line"?"直線":
+         item.type==="rect"?"方形":
+         item.type==="circle"?"圓形":
+         item.type==="free"?"隨意畫筆":"地圖物件"
+}
 
 /* map */
 const map=L.map('map',{zoomControl:true,preferCanvas:false}).setView([23.003,120.215],15);
@@ -944,11 +1126,22 @@ $("mapCtxDirection").onclick=()=>{
   const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
   pushMapHistory();fanTargetId=item.id;hideMapMenu();map.getContainer().style.cursor='crosshair';toast('從物件位置朝觀察／拍攝方向拖曳')
 };
-$("mapCtxInfo").onclick=()=>{
+$("mapCtxInfo").onclick=async()=>{
   const item=itemById(selectedMapId);hideMapMenu();if(!item)return;
   const c=mapItemCenter(item);
-  if(item.type==='photo')L.popup({maxWidth:300}).setLatLng(c).setContent(`<b>📷 ${escapeHtml(item.label||'現場照片')}</b><img class="photoThumb" src="${item.dataUrl}">${item.note?`<br>${escapeHtml(item.note)}`:''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
-  else L.popup().setLatLng(c).setContent(`<b>${escapeHtml(mapItemTypeName(item))}</b>${item.note?`<br>${escapeHtml(item.note)}`:'<br><span style="color:#92a7b2">無備註</span>'}${item.photoPath?'<br>📷 已附照片':''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map)
+  try{
+    let photoUrl="";
+    if(item.type==='photo'&&item.dataUrl)photoUrl=item.dataUrl;
+    else if(item.photoPath)photoUrl=await signedObjectMediaUrl(item.photoPath);
+    const title=item.type==='photo'?`📷 ${escapeHtml(item.label||'現場照片')}`:escapeHtml(mapItemTypeName(item));
+    const note=item.note?`<br>${escapeHtml(item.note)}`:'<br><span style="color:#92a7b2">無備註</span>';
+    const photo=photoUrl?`<img class="photoThumb" src="${photoUrl}">`:'';
+    L.popup({maxWidth:320}).setLatLng(c).setContent(`<b>${title}</b>${note}${photo}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map)
+  }catch(err){
+    console.error(err);
+    L.popup().setLatLng(c).setContent(`<b>${escapeHtml(mapItemTypeName(item))}</b>${item.note?`<br>${escapeHtml(item.note)}`:''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
+    toast("照片讀取失敗，但備註仍可查看")
+  }
 };
 
 function renderMapSelection(){
