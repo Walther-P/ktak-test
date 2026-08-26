@@ -13,7 +13,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.9 Online</title>
+<title>KTAK Mission Room V1.9.1 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -333,12 +333,34 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 .objectViewerEmpty{padding:30px 12px;color:#879ca7;text-align:center;font-size:12px}
 .uploadPerfHint{font-size:10px;color:#8fa6b1;margin-top:5px}
 
+
+/* V1.9.1 compact info cards */
+.quickInfoCard{
+  min-width:180px;max-width:280px;font-size:11px;line-height:1.45;
+  color:#eef6f9
+}
+.quickInfoCard .qiTitle{font-weight:900;font-size:12px;margin-bottom:4px}
+.quickInfoCard .qiNote{white-space:pre-wrap;margin:3px 0;color:#d8e5ea}
+.quickInfoCard .qiOwner{font-size:10px;color:#8fa5af;margin-top:5px}
+.quickInfoCard .qiThumb{
+  display:block;width:100%;max-height:150px;object-fit:contain;
+  margin-top:7px;border-radius:8px;border:1px solid #38505c;background:#071014
+}
+.boardInfoPopover{
+  position:fixed;z-index:7200;display:none;
+  width:min(300px,calc(100vw - 24px));padding:10px 11px;
+  border-radius:11px;background:rgba(10,17,22,.98);
+  border:1px solid #4a6675;box-shadow:0 8px 25px #000a;color:#eef6f9
+}
+.boardInfoPopover.open{display:block}
+.boardInfoPopover .qiThumb{max-height:170px}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9 · 圖片互動修正版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9.1 · 快速資訊＋簡報優化版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -351,26 +373,109 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <main>
 <section id="briefPage" class="page active"><div class="shell">
   <div class="flexBetween"><div><div class="sectionTitle">任務簡報</div><div class="muted">任務簡報由指揮官權限人員維護，其餘人員依權限觀看。</div></div><div class="row"><button id="briefEditBtn">編輯</button><button id="briefSaveBtn" class="primary hidden">儲存</button></div></div>
+  <div class="card"><h2>時間</h2>
+    <div>
+      <div class="label">任務時間</div>
+      <input class="briefInput" id="missionTime" placeholder="例如：2026/08/26 20:00 集合、21:00 執行">
+      <div class="valueBox briefView hidden" id="missionTimeView"></div>
+    </div>
+  </div>
+
   <div class="card"><h2>案情摘要</h2>
-    <div class="grid3">
-      <div><div class="label">案類</div><input class="briefInput" id="caseType" placeholder="例如：挾持、武裝嫌疑、重大刑案"><div class="valueBox briefView hidden" id="caseTypeView"></div></div>
-      <div><div class="label">敵情風險</div><select class="briefInput" id="riskLevel"><option value="低">低</option><option value="中" selected>中</option><option value="高">高</option></select><div class="valueBox briefView hidden" id="riskLevelView"></div></div>
-      <div><div class="label">嫌疑人數量</div><input class="briefInput" id="suspectCount" type="number" min="0" placeholder="0"><div class="valueBox briefView hidden" id="suspectCountView"></div></div>
-    </div>
-    <div style="margin-top:10px"><div class="label">嫌疑人背景 / 已知資訊</div><textarea class="briefInput" id="suspectBackground" placeholder="身分、已知行為、武器資訊、情緒或其他背景"></textarea><div class="valueBox briefView hidden" id="suspectBackgroundView"></div></div>
-  </div>
-  <div class="card"><h2>任務執行</h2>
     <div class="grid2">
-      <div><div class="label">任務執行選擇</div><select class="briefInput" id="executionMode"><option value="包圍消耗">包圍消耗</option><option value="搜索攻堅">搜索攻堅</option><option value="高風險突入">高風險突入</option><option value="其他">其他</option></select><div class="valueBox briefView hidden" id="executionModeView"></div></div>
-      <div id="executionOtherWrap"><div class="label">其他任務執行方式</div><input class="briefInput" id="executionOther" placeholder="自行輸入"><div class="valueBox briefView hidden" id="executionOtherView"></div></div>
+      <div>
+        <div class="label">案類</div>
+        <input class="briefInput" id="caseType" placeholder="例如：挾持、武裝嫌疑、重大刑案">
+        <div class="valueBox briefView hidden" id="caseTypeView"></div>
+      </div>
+      <div>
+        <div class="label">任務執行方式</div>
+        <select class="briefInput" id="executionMode">
+          <option value="包圍消耗">包圍消耗</option>
+          <option value="搜索攻堅">搜索攻堅</option>
+          <option value="高風險突入">高風險突入</option>
+          <option value="其他">其他</option>
+        </select>
+        <div class="valueBox briefView hidden" id="executionModeView"></div>
+      </div>
+    </div>
+
+    <div id="executionOtherWrap" style="margin-top:10px">
+      <div class="label">其他任務執行方式</div>
+      <input class="briefInput" id="executionOther" placeholder="自行輸入">
+      <div class="valueBox briefView hidden" id="executionOtherView"></div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="label">案情摘要／現場目前情況</div>
+      <textarea class="briefInput" id="situationSummary" placeholder="案情經過、現場目前狀況、嫌疑人動向、封鎖情形、已知風險等"></textarea>
+      <div class="valueBox briefView hidden" id="situationSummaryView"></div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="label">補充任務內容</div>
+      <textarea class="briefInput" id="missionNotes" placeholder="任務目標、限制事項、集合方式、其他重要資訊"></textarea>
+      <div class="valueBox briefView hidden" id="missionNotesView"></div>
     </div>
   </div>
-  <div class="card"><h2>現場人員</h2><div class="grid2">
-    <div><div class="label">平民數量</div><input class="briefInput" id="civilianCount" type="number" min="0" placeholder="0"><div class="valueBox briefView hidden" id="civilianCountView"></div></div>
-    <div><div class="label">攻堅隊伍組成</div><textarea class="briefInput" id="teamComposition" placeholder="例如：指揮官、A組、B組、醫療、封鎖等"></textarea><div class="valueBox briefView hidden" id="teamCompositionView"></div></div>
-  </div></div>
-  <div class="card"><h2>現場目前情況</h2><textarea class="briefInput" id="situationSummary" placeholder="現場目前狀況、嫌疑人動向、封鎖情形、已知風險、其他即時概述"></textarea><div class="valueBox briefView hidden" id="situationSummaryView"></div></div>
-  <div class="card"><h2>車輛與裝備</h2>
+
+  <div class="card"><h2>敵情</h2>
+    <div class="grid2">
+      <div>
+        <div class="label">敵情風險</div>
+        <select class="briefInput" id="riskLevel">
+          <option value="低">低</option>
+          <option value="中" selected>中</option>
+          <option value="高">高</option>
+        </select>
+        <div class="valueBox briefView hidden" id="riskLevelView"></div>
+      </div>
+      <div>
+        <div class="label">嫌疑人數量</div>
+        <input class="briefInput" id="suspectCount" type="number" min="0" placeholder="0">
+        <div class="valueBox briefView hidden" id="suspectCountView"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div class="label">嫌疑人背景／已知資訊</div>
+      <textarea class="briefInput" id="suspectBackground" placeholder="身分、已知行為、武器資訊、情緒、前科或其他已知背景"></textarea>
+      <div class="valueBox briefView hidden" id="suspectBackgroundView"></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>執行地點</h2>
+    <div>
+      <div class="label">執行地點／目標位置</div>
+      <textarea class="briefInput" id="executionLocation" placeholder="地址、建物名稱、樓層、區域、集合點或其他位置資訊"></textarea>
+      <div class="valueBox briefView hidden" id="executionLocationView"></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>執行天氣</h2>
+    <div>
+      <div class="label">天候／環境狀況</div>
+      <textarea class="briefInput" id="executionWeather" placeholder="例如：多雲、降雨、溫度、風勢、能見度、地面濕滑等"></textarea>
+      <div class="valueBox briefView hidden" id="executionWeatherView"></div>
+    </div>
+  </div>
+
+  <div class="card"><h2>現場人員</h2>
+    <div class="grid2">
+      <div>
+        <div class="label">平民數量</div>
+        <input class="briefInput" id="civilianCount" type="number" min="0" placeholder="0">
+        <div class="valueBox briefView hidden" id="civilianCountView"></div>
+      </div>
+      <div>
+        <div class="label">攻堅隊伍組成</div>
+        <textarea class="briefInput" id="teamComposition" placeholder="例如：指揮官、A組、B組、醫療、封鎖、偵查等"></textarea>
+        <div class="valueBox briefView hidden" id="teamCompositionView"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card"><h2>攜帶裝備</h2>
     <div>
       <div class="label">本次出動車輛</div>
       <div id="vehicleEditor" class="briefInput">
@@ -403,7 +508,6 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
       <div class="valueBox briefView hidden" id="equipmentView"></div>
     </div>
   </div>
-  <div class="card"><h2>補充任務內容</h2><textarea class="briefInput" id="missionNotes" placeholder="目標、時間、集合地點、限制事項、其他重要資訊"></textarea><div class="valueBox briefView hidden" id="missionNotesView"></div></div>
   <div class="card"><div class="flexBetween"><div><h3>任務資料備份</h3><div class="muted">匯出 / 匯入整個房間資料。</div></div><div class="row"><button id="exportMissionBtn">匯出</button><button id="importMissionBtn">匯入</button><input id="importMissionFile" type="file" accept=".json,application/json" class="hidden"></div></div></div>
 </div></section>
 
@@ -455,7 +559,6 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <div id="mapContextMenu" class="contextMenu">
   <div id="mapCtxTitle" class="ctxTitle">地圖物件</div>
   <div class="ctxGrid3">
-    <button id="mapCtxInfo">查看資訊</button>
     <button id="mapCtxNote">編輯備註</button>
     <button id="mapCtxPhoto">加入／更換照片</button>
     <button id="mapCtxViewPhoto">查看照片（大圖）</button>
@@ -490,6 +593,9 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <input id="boardObjectPhotoInput" type="file" accept="image/*" class="hidden">
 <div id="boardObjectTooltip"></div>
+
+
+<div id="boardInfoPopover" class="boardInfoPopover"></div>
 
 <div id="objectViewer" class="objectViewer" aria-hidden="true">
   <div class="objectViewerCard">
@@ -533,7 +639,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 const $=id=>document.getElementById(id), $$=sel=>Array.from(document.querySelectorAll(sel));
 const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16)), now=()=>new Date().toISOString(), clone=o=>JSON.parse(JSON.stringify(o));
 const roles={commander:"指揮官權限",tactical:"特勤人員",recon:"偵查隊",observer:"觀察員"};
-const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",situationSummary:"",vehicles:[],equipment:[],missionNotes:""});
+const defaultBrief=()=>({missionTime:"",caseType:"",situationSummary:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",executionLocation:"",executionWeather:"",civilianCount:"",teamComposition:"",vehicles:[],equipment:[],missionNotes:""});
 const defaultBoard=()=>({pages:[],active:0,canvasW:2000,canvasH:1400});
 let roomId="",currentRoomUuid="",currentUserId="",presence={},state=null;
 let sb=null,roomChannel=null,onlineReady=false,syncChain=Promise.resolve(),syncSnapshot={brief:null,map:null,board:null};
@@ -772,7 +878,7 @@ $("leaveBtn").onclick=async()=>{try{if(roomChannel&&sb)await sb.removeChannel(ro
 $$('.navBtn').forEach(b=>b.onclick=()=>{if(b.id==="permissionTab"&&!can("permission"))return;$$('.navBtn').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='mapPage')setTimeout(()=>map.invalidateSize(),60);if(b.dataset.page==='boardPage')setTimeout(renderBoard,30);if(b.dataset.page==='chatPage')renderChat();if(b.dataset.page==='permissionPage')renderPermissions()});
 
 /* brief */
-const briefIds=["caseType","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","civilianCount","teamComposition","situationSummary","missionNotes"];
+const briefIds=["missionTime","caseType","situationSummary","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","executionLocation","executionWeather","civilianCount","teamComposition","missionNotes"];
 
 const vehicleOptions=[
   {name:"巡邏車",unit:"台"},
@@ -924,13 +1030,13 @@ $("briefSaveBtn").onclick=()=>{
 };
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9.1",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
     if(!incoming||!incoming.brief||!incoming.map||!incoming.board)throw new Error("格式不相容");
     // 線上版只匯入任務內容；目前房間、成員身分、聊天室保持不變。
-    state.brief=clone(incoming.brief);
+    state.brief={...defaultBrief(),...clone(incoming.brief)};
     state.map=clone(incoming.map);
     state.board=clone(incoming.board);
     (state.map.items||[]).forEach(item=>{ensureObjectUuid(item);if(!item.ownerId)item.ownerId=currentUserId});
@@ -1126,6 +1232,55 @@ function mapItemTypeName(item){
          item.type==="free"?"隨意畫筆":"地圖物件"
 }
 
+/* V1.9.1 quick info helpers */
+async function mapInfoHtml(item){
+  let photoUrl="";
+  try{
+    if(item.type==='photo'&&item.dataUrl)photoUrl=item.dataUrl;
+    else if(item.photoPath)photoUrl=await signedObjectMediaUrl(item.photoPath)
+  }catch(e){console.warn("map quick photo",e)}
+  return `<div class="quickInfoCard">
+    <div class="qiTitle">${escapeHtml(mapItemTypeName(item))}</div>
+    <div class="qiNote">${item.note?escapeHtml(item.note):'<span style="color:#91a4ad">無備註</span>'}</div>
+    ${photoUrl?`<img class="qiThumb" src="${photoUrl}" alt="物件照片">`:''}
+    <div class="qiOwner">${escapeHtml(item.ownerName||'未知建立者')}</div>
+  </div>`
+}
+async function showMapQuickInfo(layer,item,{sticky=false}={}){
+  try{
+    const html=await mapInfoHtml(item);
+    layer.unbindTooltip?.();
+    layer.bindTooltip(html,{
+      permanent:false,
+      sticky:!coarsePointer,
+      direction:"top",
+      opacity:.98,
+      className:"ktakQuickInfo",
+      interactive:false
+    });
+    layer.openTooltip?.();
+    if(sticky)setTimeout(()=>layer.closeTooltip?.(),3200)
+  }catch(e){console.warn("show map quick info",e)}
+}
+async function showBoardCompactInfo(o,clientX,clientY){
+  const p=$("boardInfoPopover");
+  let photoUrl="";
+  try{if(o.photoPath)photoUrl=await signedObjectMediaUrl(o.photoPath)}catch(e){console.warn("board info photo",e)}
+  p.innerHTML=`<div class="quickInfoCard">
+    <div class="qiTitle">${escapeHtml(boardTypeName(o))}</div>
+    <div class="qiNote">${o.note?escapeHtml(o.note):'<span style="color:#91a4ad">無備註</span>'}</div>
+    ${photoUrl?`<img class="qiThumb" src="${photoUrl}" alt="物件照片">`:''}
+    <div class="qiOwner">${escapeHtml(o.ownerName||'未知建立者')}</div>
+  </div>`;
+  p.style.left=Math.max(8,Math.min(clientX+10,innerWidth-320))+"px";
+  p.style.top=Math.max(8,Math.min(clientY+10,innerHeight-260))+"px";
+  p.classList.add("open")
+}
+function hideBoardCompactInfo(){$("boardInfoPopover").classList.remove("open")}
+document.addEventListener("pointerdown",e=>{
+  if(!$("boardInfoPopover").contains(e.target))hideBoardCompactInfo()
+},{capture:true});
+
 /* map */
 const map=L.map('map',{zoomControl:true,preferCanvas:false}).setView([23.003,120.215],15);
 const road=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
@@ -1317,7 +1472,7 @@ function showMapMenu(item,clientX,clientY){
   $("mapCtxDelete").disabled=!editable;
   if(item.fan)$("mapCtxFanAngle").value=String(item.fan.angle||60);
   menu.classList.add("open");
-  const w=270,h=300,x=Math.min(clientX+6,innerWidth-w-8),y=Math.min(clientY+6,innerHeight-h-8);
+  const w=270,h=260,x=Math.min(clientX+6,innerWidth-w-8),y=Math.min(clientY+6,innerHeight-h-8);
   menu.style.left=Math.max(8,x)+"px";menu.style.top=Math.max(8,y)+"px"
 }
 function hideMapMenu(){$("mapContextMenu").classList.remove("open")}
@@ -1361,23 +1516,7 @@ $("mapCtxDirection").onclick=()=>{
   const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
   pushMapHistory();fanTargetId=item.id;hideMapMenu();map.getContainer().style.cursor='crosshair';toast('從物件位置朝觀察／拍攝方向拖曳')
 };
-$("mapCtxInfo").onclick=async()=>{
-  const item=itemById(selectedMapId);hideMapMenu();if(!item)return;
-  const c=mapItemCenter(item);
-  try{
-    let photoUrl="";
-    if(item.type==='photo'&&item.dataUrl)photoUrl=item.dataUrl;
-    else if(item.photoPath)photoUrl=await signedObjectMediaUrl(item.photoPath);
-    const title=item.type==='photo'?`📷 ${escapeHtml(item.label||'現場照片')}`:escapeHtml(mapItemTypeName(item));
-    const note=item.note?`<br>${escapeHtml(item.note)}`:'<br><span style="color:#92a7b2">無備註</span>';
-    const photo=photoUrl?`<img class="photoThumb" src="${photoUrl}">`:'';
-    L.popup({maxWidth:320}).setLatLng(c).setContent(`<b>${title}</b>${note}${photo}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map)
-  }catch(err){
-    console.error(err);
-    L.popup().setLatLng(c).setContent(`<b>${escapeHtml(mapItemTypeName(item))}</b>${item.note?`<br>${escapeHtml(item.note)}`:''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
-    toast("照片讀取失敗，但備註仍可查看")
-  }
-};
+
 
 function renderMapSelection(){
   selectionLayer.clearLayers();
@@ -1411,19 +1550,8 @@ function toggleMapSelection(item){
 }
 
 
-function quickInfoHtml(item){
-  const title=mapItemTypeName(item),note=(item.note||'').trim();
-  return `<b>${escapeHtml(title)}</b>${note?`<br>${escapeHtml(note)}`:'<br><span style="color:#92a7b2">無備註</span>'}${item.photoPath?'<br>📷 已附照片':''}`
-}
-function showQuickItemTooltip(layer,item){
-  layer.unbindTooltip();
-  layer.bindTooltip(quickInfoHtml(item),{
-    className:'mapQuickTooltip',
-    direction:'top',
-    offset:[0,-18],
-    opacity:1
-  }).openTooltip()
-}
+function quickInfoHtml(item){return ""}
+function showQuickItemTooltip(layer,item){showMapQuickInfo(layer,item,{sticky:coarsePointer})}
 
 function attachMapItemInteractions(layer,item){
   layer.once('add',()=>{
@@ -1452,14 +1580,24 @@ function attachMapItemInteractions(layer,item){
       clearTimeout(timer);document.removeEventListener('pointermove',move);map.dragging.enable();
       if(moved&&canEditItem(item)){publish();renderMapItems()}
       else if(!longTriggered&&coarsePointer){
-        showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200);showMapMenu(item,e.clientX,e.clientY)
+        showMapMenu(item,e.clientX,e.clientY)
       }
       start=null
     };
     el.addEventListener('pointerdown',down,{passive:false});
-    el.addEventListener('mouseenter',()=>showQuickItemTooltip(layer,item));
-    el.addEventListener('mouseleave',()=>layer.closeTooltip?.());
-    el.addEventListener('click',()=>{if(coarsePointer){showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200)}})
+    el.addEventListener('mouseenter',()=>{if(!coarsePointer)showMapQuickInfo(layer,item)});
+    el.addEventListener('mouseleave',()=>{if(!coarsePointer)layer.closeTooltip?.()});
+    layer.on('click',ev=>{
+      if(!coarsePointer)return;
+      const now=Date.now();
+      if(mapTapMemory.id===item.id && now-mapTapMemory.at<420){
+        L.DomEvent.stopPropagation(ev);
+        showMapQuickInfo(layer,item,{sticky:true});
+        mapTapMemory={id:null,at:0}
+      }else{
+        mapTapMemory={id:item.id,at:now}
+      }
+    });
     el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();showMapMenu(item,e.clientX,e.clientY)})
   })
 }
@@ -1768,14 +1906,9 @@ function showBoardTooltip(o,clientX,clientY){
 function hideBoardTooltip(){$("boardObjectTooltip").classList.remove("show")}
 $("boardCtxInfo").onclick=async()=>{
   const o=boardItem(selectedBoardId);if(!o)return;
+  const rect=$("boardContextMenu").getBoundingClientRect();
   hideBoardMenu();
-  await openObjectViewer({
-    title:boardTypeName(o),
-    note:o.note||"",
-    owner:o.ownerName||"",
-    photoPath:o.photoPath||"",
-    mode:"info"
-  })
+  await showBoardCompactInfo(o,rect.left,rect.bottom)
 };
 $("boardCtxNote").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;const v=prompt(`編輯「${boardTypeName(o)}」備註：`,o.note||"");if(v===null)return;pushBoardHistory();o.note=v.trim();hideBoardMenu();publish();renderBoard();toast("備註已更新")};
 let boardObjectPhotoTargetId=null;
@@ -1868,8 +2001,17 @@ canvas.addEventListener('pointercancel',e=>{
 
 canvas.addEventListener('selectstart',e=>e.preventDefault());
 canvas.addEventListener('dragstart',e=>e.preventDefault());
-canvas.addEventListener('mousemove',e=>{if(coarsePointer||boardTool!=='select'||boardGesture||boardTransformGesture||boardDrawing||boardPinching)return;const o=findBoardAt(boardPoint(e));if(o)showBoardTooltip(o,e.clientX,e.clientY);else hideBoardTooltip()});
-canvas.addEventListener('mouseleave',hideBoardTooltip);
+let boardHoverInfoId=null,boardHoverInfoTimer=null;
+canvas.addEventListener('mousemove',e=>{
+  if(coarsePointer||boardTool!=='select'||boardGesture||boardTransformGesture||boardDrawing||boardPinching)return;
+  const o=findBoardAt(boardPoint(e));
+  if(!o){boardHoverInfoId=null;clearTimeout(boardHoverInfoTimer);hideBoardCompactInfo();return}
+  if(boardHoverInfoId!==o.id){
+    boardHoverInfoId=o.id;clearTimeout(boardHoverInfoTimer);
+    boardHoverInfoTimer=setTimeout(()=>showBoardCompactInfo(o,e.clientX,e.clientY),180)
+  }
+});
+canvas.addEventListener('mouseleave',()=>{boardHoverInfoId=null;clearTimeout(boardHoverInfoTimer);hideBoardCompactInfo()});
 canvas.addEventListener('contextmenu',e=>{e.preventDefault();const p=boardPoint(e),o=findBoardAt(p);if(o)showBoardMenu(o,e.clientX,e.clientY)});
 canvas.addEventListener('pointerdown',e=>{
   if(boardPinching||boardPointers.size>=2)return;
@@ -1933,7 +2075,7 @@ function boardEnd(e){
   if(boardGesture){
     clearTimeout(boardGesture.timer);const g=boardGesture,o=boardItem(g.id);boardGesture=null;
     if(g.moved){publish();renderBoard()}
-    else if(!g.longTriggered&&coarsePointer&&o){showBoardTooltip(o,e.clientX,e.clientY);setTimeout(hideBoardTooltip,2200);showBoardMenu(o,e.clientX,e.clientY)};
+    else if(!g.longTriggered&&coarsePointer&&o){showBoardMenu(o,e.clientX,e.clientY)};
     return
   }
   if(!boardDrawing)return;boardDrawing=false;
