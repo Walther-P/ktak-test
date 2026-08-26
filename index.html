@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.7 Online</title>
+<title>KTAK Mission Room V1.8 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -23,6 +23,28 @@ header{min-height:54px;padding:calc(8px + var(--safeTop)) 12px 8px;background:#0
 .brand{display:flex;align-items:center;gap:9px;min-width:0}.logo{width:35px;height:35px;border-radius:10px;display:grid;place-items:center;background:#173548;border:1px solid #38749b;font-weight:900}.brandText b{display:block;font-size:14px}.brandText small{color:var(--muted);font-size:11px}.roomStatus{display:flex;align-items:center;gap:7px;font-size:12px;color:#c7d6dd;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px #55d57288}
 nav{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:7px 10px;background:#10191f;border-bottom:1px solid var(--line);z-index:45}nav button{padding:10px 5px;font-size:12px;background:#151f26}nav button.active{background:#164058;border-color:#2a82b3;outline:1px solid var(--blue)}
 main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:100%;overflow:auto}.page.active{display:block}.shell{max-width:1200px;margin:0 auto;padding:14px}.card{background:#121d24;border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:12px;box-shadow:0 4px 14px #0003}.card h2{font-size:15px;margin:0 0 10px}.card h3{font-size:13px;margin:0 0 8px;color:#d4e4ec}.muted{color:var(--muted);font-size:11px;line-height:1.5}.row{display:flex;gap:8px}.row>*{min-width:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.label{font-size:11px;color:#b5c6cf;margin:2px 0 5px}.valueBox{background:#0c1419;border:1px solid #2d414c;border-radius:9px;padding:10px;min-height:39px;white-space:pre-wrap}.sectionTitle{font-weight:850;font-size:18px;margin:4px 0 14px}.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#1a2a32;border:1px solid #3a4f5a;font-size:11px;color:#cedce2}.flexBetween{display:flex;align-items:center;justify-content:space-between;gap:8px}.roleBadge{font-size:10px;border-radius:999px;padding:3px 7px;background:#173348;border:1px solid #2d6688}
+/* object media */
+let objectMediaUrlCache=new Map();
+async function signedObjectMediaUrl(path){
+  if(!path)return null;const c=objectMediaUrlCache.get(path);
+  if(c&&c.expires>Date.now()+60000)return c.url;
+  const {data,error}=await sb.storage.from("ktak-object-media").createSignedUrl(path,3600);
+  if(error)throw error;objectMediaUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+3500000});return data.signedUrl
+}
+async function uploadObjectMedia(file,ownerId=currentUserId){
+  if(!file?.type?.startsWith("image/"))throw new Error("請選擇圖片");
+  if(file.size>20*1024*1024)throw new Error("原始照片請小於 20MB");
+  const blob=await compressChatPhoto(file),path=`${currentRoomUuid}/${ownerId||currentUserId}/${safeUuid()}.jpg`;
+  const {error}=await sb.storage.from("ktak-object-media").upload(path,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
+  if(error)throw error;return path
+}
+async function removeObjectMedia(path){if(!path)return;const {error}=await sb.storage.from("ktak-object-media").remove([path]);if(error)console.warn(error)}
+function mapItemTypeName(item){
+  if(item.type==='symbol')return item.label||allIconDefs[item.icon]?.[1]||'圖樣';
+  if(item.type==='photo')return item.label||'照片標示';
+  return item.type==='line'?'直線':item.type==='rect'?'方形':item.type==='circle'?'圓形':item.type==='free'?'隨意畫筆':'地圖物件'
+}
+
 /* map */
 #mapPage{overflow:hidden}.mapLayout{height:100%;display:grid;grid-template-columns:340px 1fr}.mapSidebar{background:#10191f;border-right:1px solid var(--line);padding:10px;overflow:auto}#map{height:100%;width:100%;background:#0e1519}.toolGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.toolGrid button.active{outline:2px solid var(--blue);background:#19445c}.iconGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.iconGrid button{font-size:11px;padding:8px 6px}.iconGrid button.active{outline:2px solid var(--yellow)}.searchRow{display:grid;grid-template-columns:1fr auto;gap:6px}.leaflet-container{font-family:inherit}.leaflet-control-zoom a{background:#142027!important;color:white!important;border-color:#30414b!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#121d24;color:#eef5f8}.tac-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#152129;border:2px solid white;box-shadow:0 3px 10px #000a;font-size:18px}.tac-inner{display:grid;place-items:center;width:100%;height:100%;transform-origin:center}.photoPin{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:#2b2236;border:2px solid #fff;box-shadow:0 3px 10px #000a;font-size:18px}.photoThumb{max-width:240px;max-height:180px;border-radius:8px;display:block;margin-top:7px}#mapHint{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px}.mapTopMobile{display:none}.palette{display:flex;gap:6px;flex-wrap:wrap}.colorDot{width:30px;height:30px;border-radius:50%;border:2px solid #fff;padding:0}.colorDot.active{outline:3px solid var(--blue);outline-offset:2px}.objectEditor{border:1px solid #496171;background:#0e181e}.objectEditor .row button{flex:1}.mapPopupActions{display:flex;gap:5px;margin-top:7px}.mapPopupActions button{font-size:11px;padding:5px 7px}.customIconPreview{font-size:25px;text-align:center;padding:6px}
 /* board */
@@ -251,12 +273,24 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   background:linear-gradient(180deg,#211416,#171013)!important;
 }
 .roomDangerBox p{color:#cbb9bb;font-size:11px;line-height:1.55;margin:6px 0 10px}
+
+/* V1.8 */
+.equipQuick{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.equipQuick button{font-size:10px;padding:6px 8px}
+.equipQuick button.active{background:#174b67;border-color:#49aee6;outline:1px solid #49aee6}
+.equipSelected{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.equipChip{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:999px;background:#182832;border:1px solid #395361;font-size:10px}
+.equipChip button{padding:0 3px;border:0;background:transparent;color:#ff8f8f}
+.boardToolTextInput{margin-top:7px}
+#boardObjectTooltip{position:fixed;z-index:6200;max-width:min(300px,calc(100vw - 24px));padding:8px 10px;border-radius:9px;background:rgba(10,17,22,.97);border:1px solid #496575;color:#eef6f9;box-shadow:0 6px 18px #0009;font-size:11px;line-height:1.45;pointer-events:none;display:none}
+#boardObjectTooltip.show{display:block}
+.ctxGrid3{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.7 · 線上多人修正版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.8 · 任務資訊強化版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -287,6 +321,18 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
     <div><div class="label">平民數量</div><input class="briefInput" id="civilianCount" type="number" min="0" placeholder="0"><div class="valueBox briefView hidden" id="civilianCountView"></div></div>
     <div><div class="label">攻堅隊伍組成</div><textarea class="briefInput" id="teamComposition" placeholder="例如：指揮官、A組、B組、醫療、封鎖等"></textarea><div class="valueBox briefView hidden" id="teamCompositionView"></div></div>
   </div></div>
+  <div class="card"><h2>現場目前情況</h2><textarea class="briefInput" id="situationSummary" placeholder="現場目前狀況、嫌疑人動向、封鎖情形、已知風險、其他即時概述"></textarea><div class="valueBox briefView hidden" id="situationSummaryView"></div></div>
+  <div class="card"><h2>車輛與裝備</h2>
+    <div><div class="label">本次出動車輛</div><textarea class="briefInput" id="vehicles" placeholder="自行輸入，例如：指揮車、攻堅車、偵防車、救護車等"></textarea><div class="valueBox briefView hidden" id="vehiclesView"></div></div>
+    <div style="margin-top:12px"><div class="label">本次裝備</div>
+      <div id="equipmentEditor" class="briefInput">
+        <div class="equipQuick" id="equipmentQuick"></div>
+        <div class="row" style="margin-top:8px"><input id="equipmentCustomInput" placeholder="自行新增其他裝備"><button id="equipmentAddBtn">＋ 新增</button></div>
+        <div class="equipSelected" id="equipmentSelected"></div>
+      </div>
+      <div class="valueBox briefView hidden" id="equipmentView"></div>
+    </div>
+  </div>
   <div class="card"><h2>補充任務內容</h2><textarea class="briefInput" id="missionNotes" placeholder="目標、時間、集合地點、限制事項、其他重要資訊"></textarea><div class="valueBox briefView hidden" id="missionNotesView"></div></div>
   <div class="card"><div class="flexBetween"><div><h3>任務資料備份</h3><div class="muted">匯出 / 匯入整個房間資料。</div></div><div class="row"><button id="exportMissionBtn">匯出</button><button id="importMissionBtn">匯入</button><input id="importMissionFile" type="file" accept=".json,application/json" class="hidden"></div></div></div>
 </div></section>
@@ -317,8 +363,8 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <section id="boardPage" class="page"><div class="boardLayout">
 <aside class="boardSidebar" id="boardSidebar">
   <div class="card"><h3>樓層 / 頁面</h3><div class="floorControls"><button id="prevFloorBtn">‹</button><input id="floorName" value="1F" placeholder="例如 1F、大廳、頂樓"><button id="nextFloorBtn">›</button></div><div class="row" style="margin-top:7px"><button id="addFloorBtn" style="flex:1">＋ 新增樓層</button><button id="deleteFloorBtn" class="danger">刪除</button></div><div class="muted" id="floorCountText" style="margin-top:6px"></div><div id="floorSideList" class="floorSideList"></div><div class="boardCanvasMeta"><span id="canvasSizeText">畫布</span><button id="expandCanvasBtn">＋ 擴大畫布</button></div></div>
-  <div class="card"><h3>畫筆 / 物件</h3><div class="boardToolGrid"><button class="boardTool active" data-board-tool="select">☝ 選取 / 移動</button><button class="boardTool" data-board-tool="free">✎ 隨意畫</button><button class="boardTool" data-board-tool="line">╱ 直線</button><button class="boardTool" data-board-tool="rect">□ 方形</button><button class="boardTool" data-board-tool="circle">○ 圓形</button><button class="boardTool" data-board-tool="stairsUp">▤ 樓梯↑</button><button class="boardTool" data-board-tool="stairsDown">▤ 樓梯↓</button><button class="boardTool" data-board-tool="door">▮ 門</button><button class="boardTool" data-board-tool="friendly">友軍</button><button class="boardTool" data-board-tool="enemy">敵人</button><button class="boardTool" data-board-tool="eraser">⌫ 部分橡皮擦</button><button id="boardUndoBtn">↶ 復原</button></div></div>
-  <div class="card"><h3>畫筆設定</h3><div class="row"><input id="boardColor" type="color" value="#111111" style="height:42px;padding:4px"><select id="boardWidth"><option value="2">細</option><option value="4" selected>中</option><option value="7">粗</option><option value="26">橡皮擦</option></select></div><button id="clearBoardBtn" class="danger" style="width:100%;margin-top:7px">清空本頁</button></div>
+  <div class="card"><h3>畫筆 / 物件</h3><div class="boardToolGrid"><button class="boardTool active" data-board-tool="select">☝ 選取 / 移動</button><button class="boardTool" data-board-tool="free">✎ 隨意畫</button><button class="boardTool" data-board-tool="line">╱ 直線</button><button class="boardTool" data-board-tool="rect">□ 方形</button><button class="boardTool" data-board-tool="circle">○ 圓形</button><button class="boardTool" data-board-tool="stairsUp">▤ 樓梯↑</button><button class="boardTool" data-board-tool="stairsDown">▤ 樓梯↓</button><button class="boardTool" data-board-tool="door">▮ 門</button><button class="boardTool" data-board-tool="text">T 文字</button><button class="boardTool" data-board-tool="friendly">友軍</button><button class="boardTool" data-board-tool="enemy">敵人</button><button class="boardTool" data-board-tool="eraser">⌫ 部分橡皮擦</button><button id="boardUndoBtn">↶ 復原</button></div></div>
+  <div class="card"><h3>畫筆設定</h3><div class="row"><input id="boardColor" type="color" value="#111111" style="height:42px;padding:4px"><select id="boardWidth"><option value="2">細</option><option value="4" selected>中</option><option value="7">粗</option><option value="26">橡皮擦</option></select></div><input id="boardTextInput" class="boardToolTextInput" placeholder="文字工具內容，例如：客廳、主臥、A入口"><button id="clearBoardBtn" class="danger" style="width:100%;margin-top:7px">清空本頁</button></div>
   <div class="muted">選取模式：拖曳物件移動；按住 1 秒顯示調整框，拖曳右下角 ↻ 把手旋轉／縮放；電腦右鍵、手機輕觸可刪除。手機戰術板可直接用兩隻手指捏合放大／縮小。</div>
 </aside>
 <div class="boardStage" id="boardStage"><div class="boardZoomBadge" id="boardZoomBadge">戰術板 100% · 雙指縮放</div><div class="mapTopMobile" style="top:8px;right:8px"><button id="boardToolsMobile">☰ 工具</button></div><div class="boardPaperArea"><div id="boardWrap"><canvas id="boardCanvas" width="2000" height="1400"></canvas></div><div id="floorTabs" class="floorTabs"></div></div></div>
@@ -338,8 +384,11 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <div id="mapContextMenu" class="contextMenu">
   <div id="mapCtxTitle" class="ctxTitle">地圖物件</div>
-  <div class="ctxGrid">
+  <div class="ctxGrid3">
     <button id="mapCtxInfo">查看資訊</button>
+    <button id="mapCtxNote">編輯備註</button>
+    <button id="mapCtxPhoto">加入／更換照片</button>
+    <button id="mapCtxViewPhoto">查看照片</button>
     <button id="mapCtxDirection">方向／觀察扇形</button>
     <button id="mapCtxDirectionClear">清除方向</button>
     <button id="mapCtxDelete" class="danger">刪除物件</button>
@@ -355,15 +404,21 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   <div class="ctxHint">拖曳物件＝移動；按住物件 1 秒＝進入／完成調整；選取後拖曳右下角 ↻ 把手，可同時旋轉與縮放。電腦右鍵、手機輕觸會出現此選單。</div>
 </div>
 
+<input id="mapObjectPhotoInput" type="file" accept="image/*" class="hidden">
 <div id="boardContextMenu" class="contextMenu">
   <div id="boardCtxTitle" class="ctxTitle">戰術板物件</div>
-  <div class="ctxGrid">
+  <div class="ctxGrid3">
     <button id="boardCtxDone">完成調整</button>
+    <button id="boardCtxNote">編輯備註</button>
+    <button id="boardCtxPhoto">加入／更換照片</button>
+    <button id="boardCtxViewPhoto">查看照片</button>
     <button id="boardCtxDelete" class="danger">刪除物件</button>
   </div>
   <div class="ctxHint">拖曳物件＝移動；按住 1 秒＝顯示／關閉調整框；拖曳右下角 ↻ 把手可同時旋轉與縮放。</div>
 </div>
 
+<input id="boardObjectPhotoInput" type="file" accept="image/*" class="hidden">
+<div id="boardObjectTooltip"></div>
 <div id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./config.js"></script>
@@ -374,7 +429,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 const $=id=>document.getElementById(id), $$=sel=>Array.from(document.querySelectorAll(sel));
 const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16)), now=()=>new Date().toISOString(), clone=o=>JSON.parse(JSON.stringify(o));
 const roles={commander:"指揮官權限",tactical:"特勤人員",recon:"偵查隊",observer:"觀察員"};
-const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",missionNotes:""});
+const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",situationSummary:"",vehicles:"",equipment:[],missionNotes:""});
 const defaultBoard=()=>({pages:[],active:0,canvasW:2000,canvasH:1400});
 let roomId="",currentRoomUuid="",currentUserId="",presence={},state=null;
 let sb=null,roomChannel=null,onlineReady=false,syncChain=Promise.resolve(),syncSnapshot={brief:null,map:null,board:null};
@@ -613,13 +668,43 @@ $("leaveBtn").onclick=async()=>{try{if(roomChannel&&sb)await sb.removeChannel(ro
 $$('.navBtn').forEach(b=>b.onclick=()=>{if(b.id==="permissionTab"&&!can("permission"))return;$$('.navBtn').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='mapPage')setTimeout(()=>map.invalidateSize(),60);if(b.dataset.page==='boardPage')setTimeout(renderBoard,30);if(b.dataset.page==='chatPage')renderChat();if(b.dataset.page==='permissionPage')renderPermissions()});
 
 /* brief */
-const briefIds=["caseType","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","civilianCount","teamComposition","missionNotes"];let briefEditing=false;
-function fillBrief(){briefIds.forEach(id=>{$(id).value=state.brief[id]??"";$(id+"View").textContent=state.brief[id]||"—"});$("executionOtherWrap").classList.toggle("hidden",state.brief.executionMode!=="其他"&&!briefEditing)}
-function setBriefEdit(on){if(on&&!can("brief")){toast("只有指揮官權限可編輯任務簡報");return}briefEditing=on;$$('.briefInput').forEach(x=>x.classList.toggle('hidden',!on));$$('.briefView').forEach(x=>x.classList.toggle('hidden',on));$("briefEditBtn").classList.toggle('hidden',on||!can("brief"));$("briefSaveBtn").classList.toggle('hidden',!on);$("executionOtherWrap").classList.toggle('hidden',!on&&state.brief.executionMode!=="其他")}
-$("executionMode").onchange=()=>$("executionOtherWrap").classList.toggle("hidden",$("executionMode").value!=="其他");$("briefEditBtn").onclick=()=>setBriefEdit(true);$("briefSaveBtn").onclick=()=>{briefIds.forEach(id=>state.brief[id]=$(id).value);fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")};
+const briefIds=["caseType","riskLevel","suspectCount","suspectBackground","executionMode","executionOther","civilianCount","teamComposition","situationSummary","vehicles","missionNotes"];
+const equipmentOptions=["III級盾牌","IIIA級盾牌","步槍","衝鋒槍","狙擊槍","9MM子彈","5.56步槍彈","7.62步槍彈","無線電","MPolice","電驅油壓破門器","電驅破壞剪","背負式破門器材組"];
+let briefEditing=false,equipmentDraft=[];
+function renderEquipmentEditor(){
+  $("equipmentQuick").innerHTML='';
+  equipmentOptions.forEach(name=>{
+    const b=document.createElement('button');b.type='button';b.textContent=name;b.classList.toggle('active',equipmentDraft.includes(name));
+    b.onclick=()=>{equipmentDraft.includes(name)?equipmentDraft=equipmentDraft.filter(x=>x!==name):equipmentDraft.push(name);renderEquipmentEditor()};
+    $("equipmentQuick").appendChild(b)
+  });
+  $("equipmentSelected").innerHTML='';
+  equipmentDraft.forEach(name=>{
+    const chip=document.createElement('span');chip.className='equipChip';chip.append(document.createTextNode(name));
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{equipmentDraft=equipmentDraft.filter(v=>v!==name);renderEquipmentEditor()};
+    chip.appendChild(x);$("equipmentSelected").appendChild(chip)
+  })
+}
+$("equipmentAddBtn").onclick=()=>{const v=$("equipmentCustomInput").value.trim();if(!v)return;if(!equipmentDraft.includes(v))equipmentDraft.push(v);$("equipmentCustomInput").value='';renderEquipmentEditor()};
+$("equipmentCustomInput").addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$("equipmentAddBtn").click()}});
+function fillBrief(){
+  briefIds.forEach(id=>{$(id).value=state.brief[id]??"";$(id+"View").textContent=state.brief[id]||"—"});
+  equipmentDraft=Array.isArray(state.brief.equipment)?[...state.brief.equipment]:[];
+  renderEquipmentEditor();$("equipmentView").textContent=equipmentDraft.length?equipmentDraft.join("、"):"—";
+  $("executionOtherWrap").classList.toggle("hidden",state.brief.executionMode!=="其他"&&!briefEditing)
+}
+function setBriefEdit(on){
+  if(on&&!can("brief")){toast("只有指揮官權限可編輯任務簡報");return}
+  briefEditing=on;$$('.briefInput').forEach(x=>x.classList.toggle('hidden',!on));$$('.briefView').forEach(x=>x.classList.toggle('hidden',on));
+  $("briefEditBtn").classList.toggle('hidden',on||!can("brief"));$("briefSaveBtn").classList.toggle('hidden',!on);
+  $("executionOtherWrap").classList.toggle('hidden',!on&&state.brief.executionMode!=="其他")
+}
+$("executionMode").onchange=()=>$("executionOtherWrap").classList.toggle("hidden",$("executionMode").value!=="其他");
+$("briefEditBtn").onclick=()=>setBriefEdit(true);
+$("briefSaveBtn").onclick=()=>{briefIds.forEach(id=>state.brief[id]=$(id).value);state.brief.equipment=[...equipmentDraft];fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")};
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.7",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.8",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -821,17 +906,33 @@ function showMapMenu(item,clientX,clientY){
   const editable=canEditItem(item);
   $("mapCtxDirection").disabled=!editable;
   $("mapCtxDirectionClear").disabled=!editable||!item.fan;
+  $("mapCtxNote").disabled=!editable;$("mapCtxPhoto").disabled=!editable||item.type==='photo';
+  $("mapCtxViewPhoto").disabled=!(item.photoPath||(item.type==='photo'&&item.dataUrl));
   $("mapCtxDelete").disabled=!editable;
   if(item.fan)$("mapCtxFanAngle").value=String(item.fan.angle||60);
   menu.classList.add("open");
-  const w=255,h=205,x=Math.min(clientX+6,innerWidth-w-8),y=Math.min(clientY+6,innerHeight-h-8);
+  const w=270,h=300,x=Math.min(clientX+6,innerWidth-w-8),y=Math.min(clientY+6,innerHeight-h-8);
   menu.style.left=Math.max(8,x)+"px";menu.style.top=Math.max(8,y)+"px"
 }
 function hideMapMenu(){$("mapContextMenu").classList.remove("open")}
-$("mapCtxDelete").onclick=()=>{
-  const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
-  pushMapHistory();state.map.items=state.map.items.filter(x=>x.id!==item.id);selectedMapId=null;hideMapMenu();publish();renderMapItems()
+$("mapCtxDelete").onclick=async()=>{
+  const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;pushMapHistory();const photoPath=item.photoPath;
+  state.map.items=state.map.items.filter(x=>x.id!==item.id);selectedMapId=null;hideMapMenu();publish();renderMapItems();if(photoPath)await removeObjectMedia(photoPath)
 };
+$("mapCtxNote").onclick=()=>{
+  const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
+  const v=prompt(`編輯「${mapItemTypeName(item)}」備註：`,item.note||"");if(v===null)return;
+  pushMapHistory();item.note=v.trim();hideMapMenu();publish();renderMapItems();toast("備註已更新")
+};
+let mapObjectPhotoTargetId=null;
+$("mapCtxPhoto").onclick=()=>{const item=itemById(selectedMapId);if(!item||!canEditItem(item)||item.type==='photo')return;mapObjectPhotoTargetId=item.id;$("mapObjectPhotoInput").value='';$("mapObjectPhotoInput").click()};
+$("mapObjectPhotoInput").onchange=async e=>{
+  const file=e.target.files?.[0],item=itemById(mapObjectPhotoTargetId);if(!file||!item)return;
+  try{toast("照片上傳中…");const old=item.photoPath,path=await uploadObjectMedia(file,item.ownerId||currentUserId);pushMapHistory();item.photoPath=path;publish();renderMapItems();hideMapMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  catch(err){toast("照片上傳失敗："+err.message)}finally{mapObjectPhotoTargetId=null;e.target.value=''}
+};
+$("mapCtxViewPhoto").onclick=async()=>{const item=itemById(selectedMapId);if(!item)return;hideMapMenu();try{if(item.type==='photo'&&item.dataUrl){window.open(item.dataUrl,'_blank');return}if(item.photoPath)window.open(await signedObjectMediaUrl(item.photoPath),'_blank')}catch(err){toast("照片開啟失敗："+err.message)}};
+
 $("mapCtxDirectionClear").onclick=()=>{
   const item=itemById(selectedMapId);if(!item||!canEditItem(item))return;
   pushMapHistory();item.fan=null;hideMapMenu();publish();renderMapItems()
@@ -846,9 +947,8 @@ $("mapCtxDirection").onclick=()=>{
 $("mapCtxInfo").onclick=()=>{
   const item=itemById(selectedMapId);hideMapMenu();if(!item)return;
   const c=mapItemCenter(item);
-  if(item.type==='photo')L.popup({maxWidth:300}).setLatLng(c).setContent(`<b>📷 ${escapeHtml(item.label||'現場照片')}</b><img class="photoThumb" src="${item.dataUrl}"><br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
-  else if(item.type==='symbol')L.popup().setLatLng(c).setContent(`<b>${escapeHtml(item.label||allIconDefs[item.icon]?.[1]||'圖樣')}</b>${item.note?`<br>${escapeHtml(item.note)}`:''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
-  else toast(item.type==='line'?'直線':item.type==='rect'?'方形':item.type==='circle'?'圓形':'隨意畫筆')
+  if(item.type==='photo')L.popup({maxWidth:300}).setLatLng(c).setContent(`<b>📷 ${escapeHtml(item.label||'現場照片')}</b><img class="photoThumb" src="${item.dataUrl}">${item.note?`<br>${escapeHtml(item.note)}`:''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map);
+  else L.popup().setLatLng(c).setContent(`<b>${escapeHtml(mapItemTypeName(item))}</b>${item.note?`<br>${escapeHtml(item.note)}`:'<br><span style="color:#92a7b2">無備註</span>'}${item.photoPath?'<br>📷 已附照片':''}<br><small>${escapeHtml(item.ownerName||'')}</small>`).openOn(map)
 };
 
 function renderMapSelection(){
@@ -884,12 +984,10 @@ function toggleMapSelection(item){
 
 
 function quickInfoHtml(item){
-  const title=item.label||allIconDefs[item.icon]?.[1]||'圖樣';
-  const note=(item.note||'').trim();
-  return `<b>${escapeHtml(title)}</b>${note?`<br>${escapeHtml(note)}`:'<br><span style="color:#92a7b2">無備註</span>'}`
+  const title=mapItemTypeName(item),note=(item.note||'').trim();
+  return `<b>${escapeHtml(title)}</b>${note?`<br>${escapeHtml(note)}`:'<br><span style="color:#92a7b2">無備註</span>'}${item.photoPath?'<br>📷 已附照片':''}`
 }
 function showQuickItemTooltip(layer,item){
-  if(item.type!=='symbol')return;
   layer.unbindTooltip();
   layer.bindTooltip(quickInfoHtml(item),{
     className:'mapQuickTooltip',
@@ -926,17 +1024,14 @@ function attachMapItemInteractions(layer,item){
       clearTimeout(timer);document.removeEventListener('pointermove',move);map.dragging.enable();
       if(moved&&canEditItem(item)){publish();renderMapItems()}
       else if(!longTriggered&&coarsePointer){
-        if(item.type==='symbol'){showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200)}
-        showMapMenu(item,e.clientX,e.clientY)
+        showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200);showMapMenu(item,e.clientX,e.clientY)
       }
       start=null
     };
     el.addEventListener('pointerdown',down,{passive:false});
-    if(item.type==='symbol'){
-      el.addEventListener('mouseenter',()=>showQuickItemTooltip(layer,item));
-      el.addEventListener('mouseleave',()=>layer.closeTooltip?.());
-      el.addEventListener('click',()=>{if(coarsePointer){showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200)}})
-    }
+    el.addEventListener('mouseenter',()=>showQuickItemTooltip(layer,item));
+    el.addEventListener('mouseleave',()=>layer.closeTooltip?.());
+    el.addEventListener('click',()=>{if(coarsePointer){showQuickItemTooltip(layer,item);setTimeout(()=>layer.closeTooltip?.(),2200)}})
     el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();showMapMenu(item,e.clientX,e.clientY)})
   })
 }
@@ -1124,6 +1219,7 @@ function hitBoard(o,p){
   if(o.type==='rect')return Math.abs(q.x)<=o.w/2+tol&&Math.abs(q.y)<=o.h/2+tol;
   if(o.type==='circle')return Math.hypot(q.x,q.y)<=o.r+tol;
   if(['stairsUp','stairsDown','door'].includes(o.type))return Math.abs(q.x)<=65&&Math.abs(q.y)<=65;
+  if(o.type==='text')return Math.abs(q.x)<=((o.textW||120)/2)+tol&&Math.abs(q.y)<=((o.textH||36)/2)+tol;
   if(o.type==='friendly'||o.type==='enemy')return Math.abs(q.x)<=42&&Math.abs(q.y)<=46;
   return false
 }
@@ -1145,8 +1241,9 @@ function drawBoardObject(o){
     ctx.beginPath();ctx.moveTo(0,from);ctx.lineTo(0,to);ctx.stroke();
     ctx.beginPath();ctx.moveTo(0,to);ctx.lineTo(-8,to+(o.type==='stairsUp'?14:-14));ctx.lineTo(8,to+(o.type==='stairsUp'?14:-14));ctx.closePath();ctx.fill()
   }else if(o.type==='door'){
-    ctx.fillStyle='#8a5a2b';ctx.strokeStyle='#4e321b';ctx.lineWidth=2;
-    ctx.fillRect(-55,-10,110,20);ctx.strokeRect(-55,-10,110,20)
+    ctx.fillStyle='#8a5a2b';ctx.strokeStyle='#4e321b';ctx.lineWidth=2;ctx.fillRect(-55,-10,110,20);ctx.strokeRect(-55,-10,110,20)
+  }else if(o.type==='text'){
+    ctx.fillStyle=o.color||'#111';ctx.font=`700 ${o.fontSize||28}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(o.text||'文字',0,0)
   }else if(o.type==='friendly'||o.type==='enemy'){
     const col=o.type==='friendly'?'#176aa0':'#9d2d2d';
     ctx.fillStyle=col;ctx.strokeStyle='#111';ctx.lineWidth=2;
@@ -1160,6 +1257,7 @@ function bbox(o){
   if(o.type==='rect')return[-o.w/2,-o.h/2,o.w/2,o.h/2];
   if(o.type==='circle')return[-o.r,-o.r,o.r,o.r];
   if(['stairsUp','stairsDown','door'].includes(o.type))return[-65,-65,65,65];
+  if(o.type==='text')return[-(o.textW||120)/2,-(o.textH||36)/2,(o.textW||120)/2,(o.textH||36)/2];
   if(o.type==='friendly'||o.type==='enemy')return[-45,-50,45,50];
   const pts=o.type==='line'?[o.a,o.b]:o.points||[{x:-10,y:-10},{x:10,y:10}];
   return[Math.min(...pts.map(p=>p.x))-8,Math.min(...pts.map(p=>p.y))-8,Math.max(...pts.map(p=>p.x))+8,Math.max(...pts.map(p=>p.y))+8]
@@ -1204,23 +1302,40 @@ function renderBoard(previewObj=null){
 function setBoardTool(t){if(t!=='select'&&!can('board')){toast('目前角色只能觀看');return}boardTool=t;selectedBoardId=null;hideBoardMenu();$$('.boardTool').forEach(b=>b.classList.toggle('active',b.dataset.boardTool===t));renderBoard()}
 $$('.boardTool').forEach(b=>b.onclick=()=>setBoardTool(b.dataset.boardTool));
 function createGeom(type,a,b,pts){
-  const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,base={id:uid(),type,x:cx,y:cy,rotation:0,scale:1,color:$("boardColor").value,width:+$("boardWidth").value,ownerId:currentUserId,ownerName:displayName()};
+  const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,base={id:uid(),type,x:cx,y:cy,rotation:0,scale:1,color:$("boardColor").value,width:+$("boardWidth").value,ownerId:currentUserId,ownerName:displayName(),note:""};
   if(type==='line'){base.a={x:a.x-cx,y:a.y-cy};base.b={x:b.x-cx,y:b.y-cy}}
   else if(type==='rect'){base.w=Math.abs(b.x-a.x);base.h=Math.abs(b.y-a.y)}
   else if(type==='circle'){base.x=a.x;base.y=a.y;base.r=Math.hypot(b.x-a.x,b.y-a.y)}
   else if(type==='free'||type==='erase'){const minx=Math.min(...pts.map(p=>p.x)),maxx=Math.max(...pts.map(p=>p.x)),miny=Math.min(...pts.map(p=>p.y)),maxy=Math.max(...pts.map(p=>p.y));base.x=(minx+maxx)/2;base.y=(miny+maxy)/2;base.points=pts.map(p=>({x:p.x-base.x,y:p.y-base.y}));if(type==='erase')base.width=Math.max(18,+$("boardWidth").value*4)}
   return base
 }
+function boardTypeName(o){return o.type==='text'?(o.text||'文字'):o.type==='door'?'門':o.type==='stairsUp'?'樓梯↑':o.type==='stairsDown'?'樓梯↓':o.type==='friendly'?'友軍':o.type==='enemy'?'敵人':o.type==='line'?'直線':o.type==='rect'?'方形':o.type==='circle'?'圓形':o.type==='free'?'隨意畫':'物件'}
 function showBoardMenu(o,clientX,clientY){
-  selectedBoardId=o.id;renderBoard();const m=$("boardContextMenu");$("boardCtxTitle").textContent=`${o.type} · ${o.ownerName||'未知'}`;
-  $("boardCtxDelete").disabled=!canEditItem(o);m.classList.add('open');
-  const w=230,h=130;m.style.left=Math.max(8,Math.min(clientX+6,innerWidth-w-8))+'px';m.style.top=Math.max(8,Math.min(clientY+6,innerHeight-h-8))+'px'
+  selectedBoardId=o.id;renderBoard();const m=$("boardContextMenu");$("boardCtxTitle").textContent=`${boardTypeName(o)} · ${o.ownerName||'未知'}`;
+  const editable=canEditItem(o);$("boardCtxDelete").disabled=!editable;$("boardCtxNote").disabled=!editable;$("boardCtxPhoto").disabled=!editable;$("boardCtxViewPhoto").disabled=!o.photoPath;m.classList.add('open');
+  const w=250,h=210;m.style.left=Math.max(8,Math.min(clientX+6,innerWidth-w-8))+'px';m.style.top=Math.max(8,Math.min(clientY+6,innerHeight-h-8))+'px'
 }
 function hideBoardMenu(){$("boardContextMenu").classList.remove('open')}
+function showBoardTooltip(o,clientX,clientY){
+  const t=$("boardObjectTooltip"),note=(o.note||"").trim();if(!note&&!o.photoPath){t.classList.remove("show");return}
+  t.innerHTML=`<b>${escapeHtml(boardTypeName(o))}</b>${note?`<br>${escapeHtml(note)}`:''}${o.photoPath?'<br>📷 已附照片':''}`;
+  t.style.left=Math.max(8,Math.min(clientX+10,innerWidth-315))+"px";t.style.top=Math.max(8,clientY-70)+"px";t.classList.add("show")
+}
+function hideBoardTooltip(){$("boardObjectTooltip").classList.remove("show")}
+$("boardCtxNote").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;const v=prompt(`編輯「${boardTypeName(o)}」備註：`,o.note||"");if(v===null)return;pushBoardHistory();o.note=v.trim();hideBoardMenu();publish();renderBoard();toast("備註已更新")};
+let boardObjectPhotoTargetId=null;
+$("boardCtxPhoto").onclick=()=>{const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;boardObjectPhotoTargetId=o.id;$("boardObjectPhotoInput").value='';$("boardObjectPhotoInput").click()};
+$("boardObjectPhotoInput").onchange=async e=>{
+  const file=e.target.files?.[0],o=boardItem(boardObjectPhotoTargetId);if(!file||!o)return;
+  try{toast("照片上傳中…");const old=o.photoPath,path=await uploadObjectMedia(file,o.ownerId||currentUserId);pushBoardHistory();o.photoPath=path;publish();renderBoard();hideBoardMenu();if(old&&old!==path)await removeObjectMedia(old);toast("照片已加入物件")}
+  catch(err){toast("照片上傳失敗："+err.message)}finally{boardObjectPhotoTargetId=null;e.target.value=''}
+};
+$("boardCtxViewPhoto").onclick=async()=>{const o=boardItem(selectedBoardId);if(!o?.photoPath)return;hideBoardMenu();try{window.open(await signedObjectMediaUrl(o.photoPath),'_blank')}catch(err){toast("照片開啟失敗："+err.message)}};
+
 $("boardCtxDone").onclick=()=>{selectedBoardId=null;hideBoardMenu();renderBoard()};
-$("boardCtxDelete").onclick=()=>{
-  const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;pushBoardHistory();
-  floor().objects=floor().objects.filter(x=>x.id!==o.id);selectedBoardId=null;hideBoardMenu();publish();renderBoard()
+$("boardCtxDelete").onclick=async()=>{
+  const o=boardItem(selectedBoardId);if(!o||!canEditItem(o))return;pushBoardHistory();const photoPath=o.photoPath;
+  floor().objects=floor().objects.filter(x=>x.id!==o.id);selectedBoardId=null;hideBoardMenu();publish();renderBoard();if(photoPath)await removeObjectMedia(photoPath)
 };
 function toggleBoardSelection(o){
   if(selectedBoardId===o.id){selectedBoardId=null;toast('已完成物件調整')}
@@ -1288,6 +1403,8 @@ canvas.addEventListener('pointercancel',e=>{
 
 canvas.addEventListener('selectstart',e=>e.preventDefault());
 canvas.addEventListener('dragstart',e=>e.preventDefault());
+canvas.addEventListener('mousemove',e=>{if(coarsePointer||boardTool!=='select'||boardGesture||boardTransformGesture||boardDrawing||boardPinching)return;const o=findBoardAt(boardPoint(e));if(o)showBoardTooltip(o,e.clientX,e.clientY);else hideBoardTooltip()});
+canvas.addEventListener('mouseleave',hideBoardTooltip);
 canvas.addEventListener('contextmenu',e=>{e.preventDefault();const p=boardPoint(e),o=findBoardAt(p);if(o)showBoardMenu(o,e.clientX,e.clientY)});
 canvas.addEventListener('pointerdown',e=>{
   if(boardPinching||boardPointers.size>=2)return;
@@ -1308,9 +1425,14 @@ canvas.addEventListener('pointerdown',e=>{
       timer:setTimeout(()=>{if(boardGesture&&!boardGesture.moved){boardGesture.longTriggered=true;toggleBoardSelection(o)}},1000)};
     e.preventDefault();return
   }
+  if(boardTool==='text'){
+    if(!can('board'))return;const txt=$("boardTextInput").value.trim()||(prompt("輸入要放在戰術板上的文字：","")||"").trim();if(!txt)return;pushBoardHistory();
+    ctx.save();ctx.font='700 28px sans-serif';const w=Math.max(50,ctx.measureText(txt).width+20);ctx.restore();
+    floor().objects.push({id:uid(),type:'text',text:txt,textW:w,textH:42,fontSize:28,x:p.x,y:p.y,rotation:0,scale:1,color:$("boardColor").value,width:4,ownerId:currentUserId,ownerName:displayName(),note:""});publish();renderBoard();return
+  }
   if(['stairsUp','stairsDown','door','friendly','enemy'].includes(boardTool)){
     if(!can('board'))return;pushBoardHistory();
-    const o={id:uid(),type:boardTool,x:p.x,y:p.y,rotation:0,scale:1,color:$("boardColor").value,width:+$("boardWidth").value,ownerId:currentUserId,ownerName:displayName()};
+    const o={id:uid(),type:boardTool,x:p.x,y:p.y,rotation:0,scale:1,color:$("boardColor").value,width:+$("boardWidth").value,ownerId:currentUserId,ownerName:displayName(),note:""};
     floor().objects.push(o);publish();renderBoard();return
   }
   if(!can('board'))return;boardDrawing=true;boardStart=p;boardCurrent=p;tempPoints=[p];pushBoardHistory();e.preventDefault()
@@ -1346,7 +1468,7 @@ function boardEnd(e){
   if(boardGesture){
     clearTimeout(boardGesture.timer);const g=boardGesture,o=boardItem(g.id);boardGesture=null;
     if(g.moved){publish();renderBoard()}
-    else if(!g.longTriggered&&coarsePointer&&o)showBoardMenu(o,e.clientX,e.clientY);
+    else if(!g.longTriggered&&coarsePointer&&o){showBoardTooltip(o,e.clientX,e.clientY);setTimeout(hideBoardTooltip,2200);showBoardMenu(o,e.clientX,e.clientY)};
     return
   }
   if(!boardDrawing)return;boardDrawing=false;
@@ -1492,8 +1614,16 @@ function renderPermissions(){
       if(!confirm(`清除 ${displayName(u)} 建立的地圖、戰術板與聊天內容？`))return;
       clear.disabled=true;
       try{
-        const {data:photos,error:pe}=await sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).eq("sender_id",u.id).not("image_path","is",null);
-        if(pe)throw pe;const paths=(photos||[]).map(x=>x.image_path).filter(Boolean);if(paths.length)await sb.storage.from("ktak-chat").remove(paths);
+        const [chatPhotoRes,mapPhotoRes,boardPhotoRes]=await Promise.all([
+          sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).eq("sender_id",u.id).not("image_path","is",null),
+          sb.from("ktak_map_items").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+          sb.from("ktak_board_objects").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id)
+        ]);
+        if(chatPhotoRes.error)throw chatPhotoRes.error;if(mapPhotoRes.error)throw mapPhotoRes.error;if(boardPhotoRes.error)throw boardPhotoRes.error;
+        const chatPaths=(chatPhotoRes.data||[]).map(x=>x.image_path).filter(Boolean);
+        const mediaPaths=[...(mapPhotoRes.data||[]),...(boardPhotoRes.data||[])].map(x=>x.data?.photoPath).filter(Boolean);
+        if(chatPaths.length)await sb.storage.from("ktak-chat").remove(chatPaths);
+        if(mediaPaths.length)await sb.storage.from("ktak-object-media").remove(mediaPaths);
         const results=await Promise.all([
           sb.from("ktak_map_items").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
           sb.from("ktak_board_objects").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
@@ -1516,14 +1646,16 @@ $("deleteRoomBtn").onclick=async()=>{
   if(verify!==roomId){toast("房號不一致，已取消刪除");return}
   const btn=$("deleteRoomBtn");btn.disabled=true;
   try{
-    const {data:photos,error:pe}=await sb.from("ktak_chat_messages")
-      .select("image_path").eq("room_id",currentRoomUuid).not("image_path","is",null);
-    if(pe)throw pe;
-    const paths=(photos||[]).map(x=>x.image_path).filter(Boolean);
-    if(paths.length){
-      const {error:se}=await sb.storage.from("ktak-chat").remove(paths);
-      if(se)throw se
-    }
+    const [chatRes,mapRes,boardRes]=await Promise.all([
+      sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).not("image_path","is",null),
+      sb.from("ktak_map_items").select("data").eq("room_id",currentRoomUuid),
+      sb.from("ktak_board_objects").select("data").eq("room_id",currentRoomUuid)
+    ]);
+    if(chatRes.error)throw chatRes.error;if(mapRes.error)throw mapRes.error;if(boardRes.error)throw boardRes.error;
+    const chatPaths=(chatRes.data||[]).map(x=>x.image_path).filter(Boolean);
+    const mediaPaths=[...(mapRes.data||[]),...(boardRes.data||[])].map(x=>x.data?.photoPath).filter(Boolean);
+    if(chatPaths.length){const {error:se}=await sb.storage.from("ktak-chat").remove(chatPaths);if(se)throw se}
+    if(mediaPaths.length){const {error:me}=await sb.storage.from("ktak-object-media").remove(mediaPaths);if(me)throw me}
     const {error}=await sb.rpc("ktak_delete_room",{p_room_id:currentRoomUuid});
     if(error)throw error;
     try{if(roomChannel)await sb.removeChannel(roomChannel)}catch{}
