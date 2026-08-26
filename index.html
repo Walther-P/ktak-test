@@ -13,7 +13,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.9.1 Online</title>
+<title>KTAK Mission Room V1.9.2 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -355,12 +355,56 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 .boardInfoPopover.open{display:block}
 .boardInfoPopover .qiThumb{max-height:170px}
 
+
+/* V1.9.2 — map quick info matches board dark card */
+.leaflet-tooltip.ktakQuickInfo{
+  background:rgba(10,17,22,.98)!important;
+  color:#eef6f9!important;
+  border:1px solid #4a6675!important;
+  border-radius:11px!important;
+  box-shadow:0 8px 25px rgba(0,0,0,.66)!important;
+  padding:10px 11px!important;
+}
+.leaflet-tooltip.ktakQuickInfo::before{
+  border-top-color:#4a6675!important;
+}
+.leaflet-tooltip-bottom.ktakQuickInfo::before{
+  border-bottom-color:#4a6675!important;
+  border-top-color:transparent!important;
+}
+.leaflet-tooltip-left.ktakQuickInfo::before{
+  border-left-color:#4a6675!important;
+  border-top-color:transparent!important;
+}
+.leaflet-tooltip-right.ktakQuickInfo::before{
+  border-right-color:#4a6675!important;
+  border-top-color:transparent!important;
+}
+.leaflet-tooltip.ktakQuickInfo .quickInfoCard{
+  min-width:180px;
+  max-width:280px;
+  color:#eef6f9!important;
+}
+.leaflet-tooltip.ktakQuickInfo .qiTitle{
+  color:#f4fafc!important;
+}
+.leaflet-tooltip.ktakQuickInfo .qiNote{
+  color:#d9e5ea!important;
+}
+.leaflet-tooltip.ktakQuickInfo .qiOwner{
+  color:#9db1bb!important;
+}
+.leaflet-tooltip.ktakQuickInfo .qiThumb{
+  background:#071014!important;
+  border-color:#38505c!important;
+}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9.1 · 快速資訊＋簡報優化版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9.2 · 圖資選取＋手機資訊優化版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -536,7 +580,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <section id="boardPage" class="page"><div class="boardLayout">
 <aside class="boardSidebar" id="boardSidebar">
-  <div class="card"><h3>樓層 / 頁面</h3><div class="floorControls"><button id="prevFloorBtn">‹</button><input id="floorName" value="1F" placeholder="例如 1F、大廳、頂樓"><button id="nextFloorBtn">›</button></div><div class="row" style="margin-top:7px"><button id="addFloorBtn" style="flex:1">＋ 新增樓層</button><button id="deleteFloorBtn" class="danger">刪除</button></div><div class="muted" id="floorCountText" style="margin-top:6px"></div><div id="floorSideList" class="floorSideList"></div><div class="boardCanvasMeta"><span id="canvasSizeText">畫布</span><button id="expandCanvasBtn">＋ 擴大畫布</button></div></div>
+  <div class="card"><h3>樓層 / 頁面</h3><div class="floorControls"><button id="prevFloorBtn">‹</button><input id="floorName" value="1F" placeholder="例如 1F、大廳、頂樓"><button id="nextFloorBtn">›</button></div><div class="row" style="margin-top:7px"><button id="addFloorBtn" style="flex:1">＋ 新增樓層</button><button id="deleteFloorBtn" class="danger">刪除</button></div><div class="muted" id="floorCountText" style="margin-top:6px"></div><div id="floorSideList" class="floorSideList"></div><div class="boardCanvasMeta"><span id="canvasSizeText">畫布</span><button id="expandCanvasBtn">＋ 擴大畫布</button></div></div><div class="valueBox" style="margin-top:7px">選取重疊物件時會優先抓取友軍／敵軍／門／樓梯／文字；要調整建築外框，請點方形或圓形中沒有其他圖樣覆蓋的位置。</div>
   <div class="card"><h3>畫筆 / 物件</h3><div class="boardToolGrid"><button class="boardTool active" data-board-tool="select">☝ 選取 / 移動</button><button class="boardTool" data-board-tool="free">✎ 隨意畫</button><button class="boardTool" data-board-tool="line">╱ 直線</button><button class="boardTool" data-board-tool="rect">□ 方形</button><button class="boardTool" data-board-tool="circle">○ 圓形</button><button class="boardTool" data-board-tool="stairsUp">▤ 樓梯↑</button><button class="boardTool" data-board-tool="stairsDown">▤ 樓梯↓</button><button class="boardTool" data-board-tool="door">▮ 門</button><button class="boardTool" data-board-tool="text">T 文字</button><button class="boardTool" data-board-tool="friendly">友軍</button><button class="boardTool" data-board-tool="enemy">敵人</button><button class="boardTool" data-board-tool="eraser">⌫ 部分橡皮擦</button><button id="boardUndoBtn">↶ 復原</button></div></div>
   <div class="card"><h3>畫筆設定</h3><div class="row"><input id="boardColor" type="color" value="#111111" style="height:42px;padding:4px"><select id="boardWidth"><option value="2">細</option><option value="4" selected>中</option><option value="7">粗</option><option value="26">橡皮擦</option></select></div><input id="boardTextInput" class="boardToolTextInput" placeholder="文字工具內容，例如：客廳、主臥、A入口"><button id="clearBoardBtn" class="danger" style="width:100%;margin-top:7px">清空本頁</button></div>
   <div class="muted">選取模式：拖曳物件移動；按住 1 秒顯示調整框，拖曳右下角 ↻ 把手旋轉／縮放；電腦右鍵、手機輕觸可刪除。手機戰術板可直接用兩隻手指捏合放大／縮小。</div>
@@ -1030,7 +1074,7 @@ $("briefSaveBtn").onclick=()=>{
 };
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9.1",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9.2",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -1243,7 +1287,7 @@ async function mapInfoHtml(item){
     <div class="qiTitle">${escapeHtml(mapItemTypeName(item))}</div>
     <div class="qiNote">${item.note?escapeHtml(item.note):'<span style="color:#91a4ad">無備註</span>'}</div>
     ${photoUrl?`<img class="qiThumb" src="${photoUrl}" alt="物件照片">`:''}
-    <div class="qiOwner">${escapeHtml(item.ownerName||'未知建立者')}</div>
+    <div class="qiOwner">建立者：${escapeHtml(item.ownerName||'未知')}</div>
   </div>`
 }
 async function showMapQuickInfo(layer,item,{sticky=false}={}){
@@ -1270,7 +1314,7 @@ async function showBoardCompactInfo(o,clientX,clientY){
     <div class="qiTitle">${escapeHtml(boardTypeName(o))}</div>
     <div class="qiNote">${o.note?escapeHtml(o.note):'<span style="color:#91a4ad">無備註</span>'}</div>
     ${photoUrl?`<img class="qiThumb" src="${photoUrl}" alt="物件照片">`:''}
-    <div class="qiOwner">${escapeHtml(o.ownerName||'未知建立者')}</div>
+    <div class="qiOwner">建立者：${escapeHtml(o.ownerName||'未知')}</div>
   </div>`;
   p.style.left=Math.max(8,Math.min(clientX+10,innerWidth-320))+"px";
   p.style.top=Math.max(8,Math.min(clientY+10,innerHeight-260))+"px";
@@ -1291,7 +1335,7 @@ $("mapLayerBtn").onclick=()=>{satelliteOn=!satelliteOn;if(satelliteOn){map.remov
 const mapLayer=L.layerGroup().addTo(map);
 const fanLayer=L.layerGroup().addTo(map);
 const selectionLayer=L.layerGroup().addTo(map);
-let mapTool='pan',mapIcon=null,currentColor='#45aff2',mapHistory=[],drawStart=null,preview=null,freePoints=[],freeDrawing=false,pendingPhoto=null,selectedMapId=null,fanTargetId=null;
+let mapTool='pan',mapIcon=null,currentColor='#45aff2',mapHistory=[],drawStart=null,preview=null,freePoints=[],freeDrawing=false,pendingPhoto=null,selectedMapId=null,fanTargetId=null,mapTapMemory={id:null,at:0,timer:null};
 const coarsePointer=matchMedia('(pointer:coarse)').matches;
 
 /* professional tactical symbols */
@@ -1578,26 +1622,36 @@ function attachMapItemInteractions(layer,item){
     };
     const up=e=>{
       clearTimeout(timer);document.removeEventListener('pointermove',move);map.dragging.enable();
-      if(moved&&canEditItem(item)){publish();renderMapItems()}
-      else if(!longTriggered&&coarsePointer){
-        showMapMenu(item,e.clientX,e.clientY)
+      if(moved&&canEditItem(item)){
+        publish();renderMapItems()
+      }else if(!longTriggered&&coarsePointer){
+        const now=Date.now();
+        const sameSecondTap=mapTapMemory.id===item.id && now-mapTapMemory.at<=420;
+        if(sameSecondTap){
+          clearTimeout(mapTapMemory.timer);
+          mapTapMemory={id:null,at:0,timer:null};
+          hideMapMenu();
+          showMapQuickInfo(layer,item,{sticky:true})
+        }else{
+          clearTimeout(mapTapMemory.timer);
+          const x=e.clientX,y=e.clientY,id=item.id;
+          mapTapMemory={
+            id,
+            at:now,
+            timer:setTimeout(()=>{
+              if(mapTapMemory.id===id){
+                showMapMenu(item,x,y);
+                mapTapMemory={id:null,at:0,timer:null}
+              }
+            },430)
+          }
+        }
       }
       start=null
     };
     el.addEventListener('pointerdown',down,{passive:false});
     el.addEventListener('mouseenter',()=>{if(!coarsePointer)showMapQuickInfo(layer,item)});
     el.addEventListener('mouseleave',()=>{if(!coarsePointer)layer.closeTooltip?.()});
-    layer.on('click',ev=>{
-      if(!coarsePointer)return;
-      const now=Date.now();
-      if(mapTapMemory.id===item.id && now-mapTapMemory.at<420){
-        L.DomEvent.stopPropagation(ev);
-        showMapQuickInfo(layer,item,{sticky:true});
-        mapTapMemory={id:null,at:0}
-      }else{
-        mapTapMemory={id:item.id,at:now}
-      }
-    });
     el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();showMapMenu(item,e.clientX,e.clientY)})
   })
 }
@@ -1628,7 +1682,7 @@ function setMapTool(t){
   $$('.mapTool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));$$('.mapIconTool').forEach(b=>b.classList.remove('active'));
   map.getContainer().style.cursor=cursorFor(t);
   const text={pan:'拖曳地圖；拖曳既有物件可移動，按住物件 1 秒可調整',line:'點起點再點終點畫直線',rect:'點第一角再點對角',circle:'點圓心再點邊界',free:'按住並拖曳自由畫'}[t]||'放置物件';
-  $("mapHint").textContent='目前：'+text+'。'
+  $("mapHint").textContent='目前：'+text+'。'+(coarsePointer?' 快速點同一物件兩下可查看資訊。':'')
 }
 $$('.mapTool').forEach(b=>b.onclick=()=>setMapTool(b.dataset.tool));
 function chooseIcon(key,label=null){
@@ -1747,7 +1801,7 @@ $("mapToolsMobile").onclick=e=>{e.preventDefault();e.stopPropagation();$("mapSid
 /* board */
 const canvas=$("boardCanvas"),ctx=canvas.getContext('2d');
 const boardStage=$("boardStage"),boardWrap=$("boardWrap");
-let boardTool='select',boardDrawing=false,boardStart=null,boardCurrent=null,tempPoints=[],selectedBoardId=null,boardHistory=[],boardGesture=null,boardTransformGesture=null;
+let boardTool='select',boardDrawing=false,boardStart=null,boardCurrent=null,tempPoints=[],selectedBoardId=null,boardHistory=[],boardGesture=null,boardTransformGesture=null,boardTapMemory={id:null,at:0,timer:null};
 let boardUserZoom=1,boardBaseScale=1,boardPointers=new Map(),boardPinch=null,boardPinching=false;
 function boardDisplayScale(){return boardBaseScale*boardUserZoom}
 function ensureBoardCanvasSize(){
@@ -1805,7 +1859,37 @@ function hitBoard(o,p){
   if(o.type==='friendly'||o.type==='enemy')return Math.abs(q.x)<=42&&Math.abs(q.y)<=46;
   return false
 }
-function findBoardAt(p){return [...floor().objects].reverse().find(o=>hitBoard(o,p))}
+function findBoardAt(p){
+  const objs=floor().objects||[];
+
+  // V1.9.2:
+  // Large rect/circle objects are usually building structure/background.
+  // Small semantic/tactical objects must win when they overlap.
+  const tacticalTypes=new Set(['friendly','enemy','door','stairsUp','stairsDown','text']);
+  const middleTypes=new Set(['free','line']);
+  const structuralTypes=new Set(['rect','circle']);
+
+  const tactical=[];
+  const middle=[];
+  const structural=[];
+  const other=[];
+
+  for(const o of objs){
+    if(tacticalTypes.has(o.type))tactical.push(o);
+    else if(middleTypes.has(o.type))middle.push(o);
+    else if(structuralTypes.has(o.type))structural.push(o);
+    else other.push(o)
+  }
+
+  // Within the same priority class, the later/topmost object still wins.
+  const groups=[tactical,middle,structural,other];
+  for(const group of groups){
+    for(let i=group.length-1;i>=0;i--){
+      if(hitBoard(group[i],p))return group[i]
+    }
+  }
+  return null
+}
 function drawBoardObject(o){
   ctx.save();ctx.translate(o.x||0,o.y||0);ctx.rotate((o.rotation||0)*Math.PI/180);ctx.scale(o.scale||1,o.scale||1);
   ctx.strokeStyle=o.color||'#111';ctx.fillStyle=o.color||'#111';ctx.lineWidth=o.width||4;ctx.lineCap='round';ctx.lineJoin='round';
@@ -2074,8 +2158,32 @@ function boardEnd(e){
   if(boardTransformGesture){boardTransformGesture=null;publish();renderBoard();return}
   if(boardGesture){
     clearTimeout(boardGesture.timer);const g=boardGesture,o=boardItem(g.id);boardGesture=null;
-    if(g.moved){publish();renderBoard()}
-    else if(!g.longTriggered&&coarsePointer&&o){showBoardMenu(o,e.clientX,e.clientY)};
+    if(g.moved){
+      publish();renderBoard()
+    }else if(!g.longTriggered&&coarsePointer&&o){
+      const now=Date.now();
+      const sameSecondTap=boardTapMemory.id===o.id && now-boardTapMemory.at<=420;
+      if(sameSecondTap){
+        clearTimeout(boardTapMemory.timer);
+        boardTapMemory={id:null,at:0,timer:null};
+        hideBoardMenu();
+        showBoardCompactInfo(o,e.clientX,e.clientY);
+        setTimeout(()=>hideBoardCompactInfo(),3400)
+      }else{
+        clearTimeout(boardTapMemory.timer);
+        const x=e.clientX,y=e.clientY,id=o.id;
+        boardTapMemory={
+          id,
+          at:now,
+          timer:setTimeout(()=>{
+            if(boardTapMemory.id===id){
+              showBoardMenu(o,x,y);
+              boardTapMemory={id:null,at:0,timer:null}
+            }
+          },430)
+        }
+      }
+    }
     return
   }
   if(!boardDrawing)return;boardDrawing=false;
