@@ -13,7 +13,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.9.2 Online</title>
+<title>KTAK Mission Room V2.0 Security</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -399,12 +399,52 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   border-color:#38505c!important;
 }
 
+
+/* V2.0 Security */
+.securityBox{
+  border:1px solid #34515e;background:#0c171c;border-radius:12px;padding:10px
+}
+.securityGood{color:#83d6a2}
+.securityWarn{color:#ffd27d}
+.securityBad{color:#ff8d8d}
+.pendingBadge,.approvedBadge{
+  display:inline-flex;align-items:center;border-radius:999px;padding:3px 7px;
+  font-size:9px;font-weight:800;margin-left:5px
+}
+.pendingBadge{background:#5d4518;color:#ffd784;border:1px solid #8c6d28}
+.approvedBadge{background:#163d2a;color:#8ce1ad;border:1px solid #2d6b4b}
+.permissionActions{display:flex;gap:5px;flex-wrap:wrap}
+#turnstileBox{min-height:68px;display:flex;align-items:center;justify-content:center;margin-top:10px}
+.securityModal{
+  position:fixed;inset:0;z-index:9800;background:rgba(0,0,0,.82);
+  display:none;align-items:center;justify-content:center;padding:16px
+}
+.securityModal.open{display:flex}
+.securityModalCard{
+  width:min(560px,96vw);background:#0e181e;border:1px solid #496575;
+  border-radius:15px;padding:16px;box-shadow:0 20px 70px #000d
+}
+.recoveryCode{
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all;
+  background:#071014;border:1px solid #37505c;border-radius:10px;padding:12px;
+  font-size:16px;letter-spacing:.6px;margin:10px 0
+}
+.pendingOverlay{
+  position:fixed;inset:0;z-index:9700;background:rgba(4,9,12,.96);
+  display:none;align-items:center;justify-content:center;padding:18px
+}
+.pendingOverlay.open{display:flex}
+.pendingCard{width:min(520px,96vw);background:#0e181e;border:1px solid #496575;border-radius:15px;padding:18px;text-align:center}
+.auditList{display:grid;gap:6px;max-height:320px;overflow:auto}
+.auditRow{padding:8px;border:1px solid #2e444f;border-radius:9px;background:#0b151a;font-size:10px;line-height:1.45}
+.auditRow b{font-size:11px}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.9.2 · 圖資選取＋手機資訊優化版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V2.0 · Security Production</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -590,14 +630,26 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <section id="chatPage" class="page"><div class="chatShell"><div class="chatInfo"><div><b>聊天室</b><div class="muted">觀察員僅能觀看；其他角色可發言。指揮官可刪除房間內訊息。可傳送文字或照片。</div></div><div class="memberList" id="memberList"></div></div><div id="chatLog"></div><div><div id="chatPhotoPreview" class="chatPhotoPreview hidden"><img id="chatPhotoPreviewImg"><div class="photoInfo"><div class="label">待傳送照片</div><div id="chatPhotoName" class="photoName"></div></div><button id="chatPhotoClearBtn" class="danger">移除</button></div><div class="chatInput"><input id="chatPhotoInput" class="hidden" type="file" accept="image/*"><button id="chatPhotoBtn" class="chatPhotoBtn" title="插入照片">📷</button><input id="chatInput" placeholder="輸入訊息…"><button id="chatSendBtn" class="primary">送出</button></div></div></div></section>
 
-<section id="permissionPage" class="page"><div class="shell"><div class="sectionTitle">房間權限</div><div class="card"><h2>角色規則</h2><div class="grid2"><div class="valueBox">指揮官權限：可編輯簡報、地圖、照片、戰術板、聊天室及成員權限；可刪除任何人的內容。</div><div class="valueBox">特勤人員 / 偵查隊：可繪製地圖、插入照片、使用戰術板與聊天室；只能刪除自己建立的內容。</div><div class="valueBox">觀察員：只能觀看，不可繪製、上傳或發言。</div><div class="valueBox">房間建立者固定以「特勤指揮官・暱稱」顯示，預設具有指揮官權限。</div></div></div><div class="card"><h2>加入者權限</h2><div id="permissionList"></div></div><div id="roomAdminCard" class="card roomDangerBox hidden"><h2>房間管理</h2><p>只有原始房間建立者可以刪除整個房間。刪除後，任務簡報、地圖、戰術板、聊天室與聊天室照片都會移除，原房號即可再次建立。</p><button id="deleteRoomBtn" class="danger" style="width:100%">刪除整個房間並釋放房號</button></div></div></section>
+<section id="permissionPage" class="page"><div class="shell"><div class="sectionTitle">房間權限</div>
+<div class="card"><h2>安全權限規則</h2><div class="grid2"><div class="valueBox">新加入者：先待核准，核准前無法讀取任務資料。</div><div class="valueBox">指揮官：可核准／移除成員、調整權限、編輯全房內容。</div><div class="valueBox">特勤／偵查：可建立與修改自己的地圖／戰術板物件與聊天內容。</div><div class="valueBox">觀察員：只能觀看；戰術板樓層、畫布大小與清空整頁僅限指揮官。</div></div></div>
+<div class="card"><h2>成員核准與權限</h2><div id="permissionList"></div></div>
+<div id="securityAdminCard" class="card hidden"><h2>安全管理</h2>
+  <div id="roomExpiryInfo" class="valueBox"></div>
+  <div class="label" style="margin-top:10px">更換房間密碼</div>
+  <div class="row"><input id="newRoomPassword" type="password" minlength="8" maxlength="72" placeholder="新密碼（至少 8 碼）"><button id="changeRoomPasswordBtn">更新密碼</button></div>
+</div>
+<div id="roomAdminCard" class="card roomDangerBox hidden"><h2>建立者管理</h2><p>恢復金鑰只應由房間建立者保存。可隨時輪替；舊金鑰會立即失效。</p><div class="row"><button id="rotateRecoveryBtn" style="flex:1">🔑 產生新的恢復金鑰</button><button id="deleteRoomBtn" class="danger" style="flex:1">刪除整個房間</button></div></div>
+<div class="card"><h2>安全稽核紀錄</h2><div class="muted">顯示最近的房間管理、核准、角色變更、移除與恢復操作。</div><div id="auditList" class="auditList" style="margin-top:8px"></div></div>
+</div></section>
 </main>
 </div>
 
 <div class="overlay" id="entryOverlay"><div class="entryCard">
-  <div id="entryHome"><h1>KTAK 任務房間</h1><p>建立新任務房間，或加入既有房間。建立者自動成為特勤指揮官。</p><div class="entryActions"><button id="showCreateBtn" class="primary">＋ 創建房間</button><button id="showJoinBtn">→ 加入房間</button></div><div class="muted" style="margin-top:12px"><span id="onlineStatus">正在檢查線上服務…</span></div></div>
-  <div id="createForm" class="hidden"><div class="formTitle">創建房間</div><div class="stack"><input id="createRoom" placeholder="設定房號，例如 A102"><input id="createPassword" type="password" placeholder="密碼（可留空）"><input id="createNick" placeholder="你的暱稱"><div class="row"><button class="backEntry">返回</button><button id="createRoomBtn" class="primary" style="flex:1">創建並進入</button></div></div></div>
-  <div id="joinForm" class="hidden"><div class="formTitle">加入房間</div><div class="stack"><input id="joinRoom" placeholder="房號"><input id="joinPassword" type="password" placeholder="密碼（房間無密碼則留空）"><input id="joinNick" placeholder="你的暱稱"><select id="joinRole"><option value="tactical">特勤人員</option><option value="recon">偵查隊</option><option value="observer">觀察員</option></select><div class="row"><button class="backEntry">返回</button><button id="joinRoomBtn" class="primary" style="flex:1">加入</button></div></div></div>
+  <div id="entryHome"><h1>KTAK 任務房間</h1><p>安全版：建立、加入或恢復任務房間。新加入者須由指揮官核准後才能查看任務內容。</p><div class="entryActions"><button id="showCreateBtn" class="primary">＋ 創建房間</button><button id="showJoinBtn">→ 加入房間</button><button id="showRecoverBtn">🔑 恢復指揮官</button></div><div class="muted" style="margin-top:12px"><span id="onlineStatus">正在檢查線上服務…</span></div></div>
+  <div id="createForm" class="hidden"><div class="formTitle">創建安全房間</div><div class="stack"><input id="createRoom" placeholder="設定房號，例如 A102"><input id="createPassword" type="password" minlength="8" maxlength="72" placeholder="房間密碼（至少 8 碼）"><input id="createNick" placeholder="你的暱稱"><select id="createRetention"><option value="1">保存 1 天</option><option value="7" selected>保存 7 天</option><option value="30">保存 30 天</option></select><div class="muted">到期後房間會停止存取，並由清理程序移除資料與照片。</div><div class="row"><button class="backEntry">返回</button><button id="createRoomBtn" class="primary" style="flex:1">創建並進入</button></div></div></div>
+  <div id="joinForm" class="hidden"><div class="formTitle">申請加入房間</div><div class="stack"><input id="joinRoom" placeholder="房號"><input id="joinPassword" type="password" placeholder="房間密碼"><input id="joinNick" placeholder="你的暱稱"><select id="joinRole"><option value="tactical">申請：特勤人員</option><option value="recon">申請：偵查隊</option><option value="observer">申請：觀察員</option></select><div class="muted">送出後先進入待核准狀態；指揮官核准前看不到任務內容。</div><div class="row"><button class="backEntry">返回</button><button id="joinRoomBtn" class="primary" style="flex:1">送出加入申請</button></div></div></div>
+  <div id="recoverForm" class="hidden"><div class="formTitle">恢復指揮官</div><div class="stack"><input id="recoverRoom" placeholder="房號"><input id="recoverCode" type="password" placeholder="指揮官恢復金鑰"><input id="recoverNick" placeholder="恢復後顯示的暱稱"><div class="muted">恢復成功後舊金鑰會立即失效，系統會產生一組新金鑰。</div><div class="row"><button class="backEntry">返回</button><button id="recoverRoomBtn" class="primary" style="flex:1">恢復控制權</button></div></div></div>
+  <div id="turnstileBox"></div>
 </div></div>
 
 <div id="mapContextMenu" class="contextMenu">
@@ -655,7 +707,27 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   </div>
 </div>
 
+
+<div id="pendingOverlay" class="pendingOverlay">
+  <div class="pendingCard">
+    <h2>等待指揮官核准</h2>
+    <p id="pendingText">加入申請已送出。</p>
+    <div class="muted">核准前不會下載任務簡報、地圖、戰術板或聊天室內容。</div>
+    <button id="cancelPendingBtn" style="margin-top:12px;width:100%">取消並離開</button>
+  </div>
+</div>
+
+<div id="securityModal" class="securityModal">
+  <div class="securityModalCard">
+    <h2 id="securityModalTitle">指揮官恢復金鑰</h2>
+    <p id="securityModalText">請把這組金鑰保存在安全的位置。伺服器只保存雜湊值，無法替你找回原字串。</p>
+    <div id="securityRecoveryCode" class="recoveryCode"></div>
+    <div class="row"><button id="copyRecoveryBtn" class="primary" style="flex:1">複製金鑰</button><button id="closeSecurityModal" style="flex:1">我已保存</button></div>
+  </div>
+</div>
+
 <div id="toast"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="./config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -690,8 +762,10 @@ let sb=null,roomChannel=null,onlineReady=false,syncChain=Promise.resolve(),syncS
 let refreshTimers={};
 const cfg=window.KTAK_CONFIG||{};
 const configReady=!!(cfg.SUPABASE_URL&&cfg.SUPABASE_PUBLISHABLE_KEY&&!String(cfg.SUPABASE_URL).includes("YOUR_")&&!String(cfg.SUPABASE_PUBLISHABLE_KEY).includes("YOUR_"));
+const turnstileConfigured=!!(cfg.TURNSTILE_SITE_KEY&&!String(cfg.TURNSTILE_SITE_KEY).includes("YOUR_"));
+let turnstileToken="",turnstileWidgetId=null,pendingPoll=null;
 
-function blankState(room,creatorId=""){return {schema:3,meta:{room,roomUuid:"",creatorId,createdAt:now()},users:{},brief:defaultBrief(),map:{items:[]},board:defaultBoard(),chat:[],updatedAt:now()}}
+function blankState(room,creatorId=""){return {schema:4,meta:{room,roomUuid:"",creatorId,createdAt:now(),expiresAt:""},users:{},brief:defaultBrief(),map:{items:[]},board:defaultBoard(),chat:[],updatedAt:now()}}
 function user(){return state?.users?.[currentUserId]||null}
 function role(){return user()?.role||"observer"}
 function displayName(u=user()){
@@ -717,22 +791,54 @@ function ensureObjectUuid(obj){if(!validUuid(obj.id))obj.id=safeUuid();return ob
 function onlineStatus(text,kind="wait"){const el=$("onlineStatus");if(!el)return;el.textContent=text;el.className=kind==="ok"?"onlineOk":kind==="bad"?"onlineBad":"onlineWait"}
 
 async function initBackend(){
-  if(!configReady){onlineStatus("尚未設定 Supabase：請先完成 V1.6 SETUP 步驟","bad");return false}
+  if(!configReady){onlineStatus("尚未設定 Supabase","bad");return false}
+  if(!turnstileConfigured){onlineStatus("安全版尚未設定 Cloudflare Turnstile Site Key","bad");return false}
   if(!window.supabase?.createClient){onlineStatus("Supabase 程式庫載入失敗","bad");return false}
   try{
     sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{
       auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
     });
-    onlineStatus("線上服務已設定；建立／加入房間時會連線","ok");
+
+    // V2.0 security migration: force one clean authentication after upgrading
+    // from the prototype, so all future anonymous sessions pass Turnstile.
+    if(localStorage.getItem("ktak.v2.auth-reset")!=="done"){
+      try{await sb.auth.signOut({scope:"local"})}catch{}
+      Object.keys(localStorage).filter(k=>k.startsWith("ktak.v16.cache.")).forEach(k=>localStorage.removeItem(k));
+      sessionStorage.removeItem("ktak.v16.roomUuid");
+      sessionStorage.removeItem("ktak.v16.room");
+      localStorage.setItem("ktak.v2.auth-reset","done")
+    }
+
+    onlineStatus("Security backend ready","ok");
+    initTurnstile();
     return true
   }catch(e){console.error(e);onlineStatus("Supabase 初始化失敗","bad");return false}
 }
+function initTurnstile(){
+  if(!turnstileConfigured)return;
+  if(!window.turnstile){setTimeout(initTurnstile,250);return}
+  if(turnstileWidgetId!==null)return;
+  try{
+    turnstileWidgetId=window.turnstile.render("#turnstileBox",{
+      sitekey:cfg.TURNSTILE_SITE_KEY,
+      callback:t=>{turnstileToken=t;onlineStatus("安全驗證完成","ok")},
+      "expired-callback":()=>{turnstileToken="";onlineStatus("安全驗證已過期，請重新驗證","wait")},
+      "error-callback":()=>{turnstileToken="";onlineStatus("安全驗證載入失敗","bad")}
+    })
+  }catch(e){console.warn("Turnstile render",e)}
+}
+function resetTurnstile(){
+  turnstileToken="";
+  try{if(window.turnstile&&turnstileWidgetId!==null)window.turnstile.reset(turnstileWidgetId)}catch{}
+}
 async function ensureAuth(){
-  if(!sb&&!(await initBackend()))throw new Error("尚未設定線上服務");
+  if(!sb&&!(await initBackend()))throw new Error("尚未設定安全線上服務");
   const {data:{session},error:sErr}=await sb.auth.getSession();
   if(sErr)throw sErr;
   if(session?.user){currentUserId=session.user.id;return session.user}
-  const {data,error}=await sb.auth.signInAnonymously();
+  if(!turnstileToken)throw new Error("請先完成 Cloudflare 安全驗證");
+  const {data,error}=await sb.auth.signInAnonymously({options:{captchaToken:turnstileToken}});
+  resetTurnstile();
   if(error)throw error;
   currentUserId=data.user.id;
   return data.user
@@ -742,10 +848,10 @@ function boardDbObject(r){const d=clone(r.data||{});d.id=r.id;d.ownerId=r.owner_
 function chatDbRow(r){return {id:r.id,senderId:r.sender_id,senderName:r.sender_name||"成員",text:r.text||"",imagePath:r.image_path||null,ts:r.created_at}}
 
 async function fetchMembers(){
-  const {data,error}=await sb.from("ktak_room_members").select("user_id,nick,role,joined_at").eq("room_id",currentRoomUuid).order("joined_at");
+  const {data,error}=await sb.from("ktak_room_members").select("user_id,nick,role,requested_role,approved,approved_at,joined_at").eq("room_id",currentRoomUuid).order("joined_at");
   if(error)throw error;
   state.users={};
-  (data||[]).forEach(m=>state.users[m.user_id]={id:m.user_id,nick:m.nick,role:m.role,joinedAt:m.joined_at});
+  (data||[]).forEach(m=>state.users[m.user_id]={id:m.user_id,nick:m.nick,role:m.role,requestedRole:m.requested_role||"observer",approved:m.approved!==false,approvedAt:m.approved_at,joinedAt:m.joined_at});
 }
 async function fetchBrief(){
   const {data,error}=await sb.from("ktak_brief").select("data").eq("room_id",currentRoomUuid).single();
@@ -784,7 +890,7 @@ async function loadOnlineRoom(roomUuid){
   if(error)throw error;
   roomId=room.code;
   state=blankState(room.code,room.creator_user_id);
-  state.meta.roomUuid=room.id;state.meta.createdAt=room.created_at;
+  state.meta.roomUuid=room.id;state.meta.createdAt=room.created_at;state.meta.expiresAt=room.expires_at||"";
   await Promise.all([fetchMembers(),fetchBrief(),fetchMap(),fetchBoard(),fetchChat()]);
   save()
 }
@@ -849,11 +955,19 @@ function publish(){
   }).catch(err=>{console.error("sync",err);toast("同步失敗："+(err.message||"未知錯誤"))})
 }
 function scheduleRefresh(kind,fn){
-  clearTimeout(refreshTimers[kind]);refreshTimers[kind]=setTimeout(async()=>{try{await fn();save();if(kind==="members"){renderPermissions();applyRoleUI();renderMembers();$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()]}else if(kind==="brief"){fillBrief()}else if(kind==="map"){renderMapItems()}else if(kind==="board"){renderBoard()}else if(kind==="chat"){renderChat()}}catch(e){console.error(e)}},80)
+  clearTimeout(refreshTimers[kind]);refreshTimers[kind]=setTimeout(async()=>{try{await fn();save();if(kind==="members"){
+      if(!state.users[currentUserId]){
+        try{if(roomChannel)await sb.removeChannel(roomChannel)}catch{}
+        sessionStorage.removeItem("ktak.v16.roomUuid");sessionStorage.removeItem("ktak.v16.room");
+        alert("你的房間存取權限已被移除。");location.reload();return
+      }
+      renderPermissions();applyRoleUI();renderMembers();$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()]
+    }else if(kind==="brief"){fillBrief()}else if(kind==="map"){renderMapItems()}else if(kind==="board"){renderBoard()}else if(kind==="chat"){renderChat()}}catch(e){console.error(e)}},80)
 }
 async function setupRealtime(){
   if(roomChannel)await sb.removeChannel(roomChannel);
-  roomChannel=sb.channel(`ktak-room-${currentRoomUuid}`,{config:{presence:{key:currentUserId}}})
+  await sb.realtime.setAuth();
+  roomChannel=sb.channel(`ktak:${currentRoomUuid}`,{config:{private:true,presence:{key:currentUserId}}})
     .on("presence",{event:"sync"},()=>{
       presence={};const ps=roomChannel.presenceState();
       Object.values(ps).flat().forEach(p=>{if(p?.userId)presence[p.userId]={name:p.name||"成員",role:p.role||"",ts:Date.now()}});
@@ -882,40 +996,116 @@ async function enterRoom(){
   renderAll();
   await setupRealtime()
 }
-function showEntry(which){$("entryHome").classList.toggle("hidden",which!=="home");$("createForm").classList.toggle("hidden",which!=="create");$("joinForm").classList.toggle("hidden",which!=="join")}
-$("showCreateBtn").onclick=()=>showEntry("create");$("showJoinBtn").onclick=()=>showEntry("join");$$(".backEntry").forEach(b=>b.onclick=()=>showEntry("home"));
+function showEntry(which){
+  $("entryHome").classList.toggle("hidden",which!=="home");
+  $("createForm").classList.toggle("hidden",which!=="create");
+  $("joinForm").classList.toggle("hidden",which!=="join");
+  $("recoverForm").classList.toggle("hidden",which!=="recover");
+  initTurnstile()
+}
+$("showCreateBtn").onclick=()=>showEntry("create");
+$("showJoinBtn").onclick=()=>showEntry("join");
+$("showRecoverBtn").onclick=()=>showEntry("recover");
+$$(".backEntry").forEach(b=>b.onclick=()=>showEntry("home"));
+
+
+function showRecoveryCode(code,title="指揮官恢復金鑰"){
+  $("securityModalTitle").textContent=title;
+  $("securityRecoveryCode").textContent=code||"";
+  $("securityModal").classList.add("open")
+}
+$("copyRecoveryBtn").onclick=async()=>{
+  const code=$("securityRecoveryCode").textContent;
+  try{await navigator.clipboard.writeText(code);toast("恢復金鑰已複製")}catch{toast("無法自動複製，請手動選取")}
+};
+$("closeSecurityModal").onclick=()=>$("securityModal").classList.remove("open");
+
+async function waitForApproval(roomUuid,roomCode,nick){
+  currentRoomUuid=roomUuid;roomId=roomCode;
+  sessionStorage.setItem("ktak.v16.roomUuid",roomUuid);
+  sessionStorage.setItem("ktak.v16.room",roomCode);
+  $("entryOverlay").classList.add("hidden");
+  $("pendingText").textContent=`${nick} 已申請加入 ${roomCode}，等待指揮官核准。`;
+  $("pendingOverlay").classList.add("open");
+  clearInterval(pendingPoll);
+  const check=async()=>{
+    try{
+      const {data,error}=await sb.from("ktak_room_members")
+        .select("approved,role").eq("room_id",roomUuid).eq("user_id",currentUserId).maybeSingle();
+      if(error)return;
+      if(!data){
+        clearInterval(pendingPoll);$("pendingOverlay").classList.remove("open");
+        sessionStorage.removeItem("ktak.v16.roomUuid");sessionStorage.removeItem("ktak.v16.room");
+        alert("加入申請已被移除。");location.reload();return
+      }
+      if(data.approved){
+        clearInterval(pendingPoll);$("pendingOverlay").classList.remove("open");
+        await loadOnlineRoom(roomUuid);await enterRoom()
+      }
+    }catch(e){console.warn("approval poll",e)}
+  };
+  await check();pendingPoll=setInterval(check,2000)
+}
+$("cancelPendingBtn").onclick=async()=>{
+  clearInterval(pendingPoll);
+  try{await sb.rpc("ktak_cancel_join_request",{p_room_id:currentRoomUuid})}catch{}
+  sessionStorage.removeItem("ktak.v16.roomUuid");sessionStorage.removeItem("ktak.v16.room");
+  location.reload()
+};
 
 $("createRoomBtn").onclick=async()=>{
   const r=$("createRoom").value.trim().toUpperCase(),nick=$("createNick").value.trim(),pass=$("createPassword").value;
+  const retention=Number($("createRetention").value);
   if(!r||!nick){toast("請輸入房號與暱稱");return}
+  if(pass.length<8||pass.length>72){toast("安全版房間密碼需 8～72 碼");return}
   try{
     $("createRoomBtn").disabled=true;await ensureAuth();
-    const {data,error}=await sb.rpc("ktak_create_room",{p_code:r,p_password:pass,p_nick:nick});
+    const {data,error}=await sb.rpc("ktak_create_room",{p_code:r,p_password:pass,p_nick:nick,p_retention_days:retention});
     if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;if(!row?.room_id)throw new Error("建立房間失敗");
+    if(row.recovery_code)showRecoveryCode(row.recovery_code,"請保存指揮官恢復金鑰");
     await loadOnlineRoom(row.room_id);await enterRoom()
   }catch(e){
-    console.error(e);
-    if(String(e.message).includes("ROOM_EXISTS"))toast("這個房號已存在，請換一個房號");
-    else toast("建立失敗："+e.message)
-  }finally{$("createRoomBtn").disabled=false}
+    console.error(e);const msg=String(e.message||"");
+    if(msg.includes("ROOM_EXISTS"))toast("這個房號已存在");
+    else if(msg.includes("ROOM_CREATE_LIMIT"))toast("建立房間次數過多，請稍後再試");
+    else toast("建立失敗："+msg)
+  }finally{$("createRoomBtn").disabled=false;initTurnstile()}
 };
+
 $("joinRoomBtn").onclick=async()=>{
   const r=$("joinRoom").value.trim().toUpperCase(),nick=$("joinNick").value.trim(),pass=$("joinPassword").value,requested=$("joinRole").value;
-  if(!r||!nick){toast("請輸入房號與暱稱");return}
+  if(!r||!nick||!pass){toast("請輸入房號、密碼與暱稱");return}
   try{
     $("joinRoomBtn").disabled=true;await ensureAuth();
     const {data,error}=await sb.rpc("ktak_join_room",{p_code:r,p_password:pass,p_nick:nick,p_requested_role:requested});
     if(error)throw error;
-    const row=Array.isArray(data)?data[0]:data;if(!row?.room_id)throw new Error("加入房間失敗");
-    await loadOnlineRoom(row.room_id);await enterRoom()
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("加入房間失敗");
+    if(row.status==="RATE_LIMITED"){toast("嘗試次數過多，10 分鐘後再試");return}
+    if(row.status!=="OK"||!row.room_id){toast("房號或密碼錯誤");return}
+    if(row.approved){await loadOnlineRoom(row.room_id);await enterRoom()}
+    else await waitForApproval(row.room_id,row.room_code,nick)
   }catch(e){
-    console.error(e);const msg=String(e.message||"");
-    if(msg.includes("ROOM_NOT_FOUND"))toast("找不到這個房間");
-    else if(msg.includes("BAD_PASSWORD"))toast("房間密碼錯誤");
-    else toast("加入失敗："+msg)
-  }finally{$("joinRoomBtn").disabled=false}
+    console.error(e);toast("加入失敗："+String(e.message||"未知錯誤"))
+  }finally{$("joinRoomBtn").disabled=false;initTurnstile()}
 };
+
+$("recoverRoomBtn").onclick=async()=>{
+  const r=$("recoverRoom").value.trim().toUpperCase(),code=$("recoverCode").value.trim(),nick=$("recoverNick").value.trim();
+  if(!r||!code||!nick){toast("請輸入房號、恢復金鑰與暱稱");return}
+  try{
+    $("recoverRoomBtn").disabled=true;await ensureAuth();
+    const {data,error}=await sb.rpc("ktak_recover_commander",{p_code:r,p_recovery_code:code,p_nick:nick});
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row||row.status!=="OK"){toast(row?.status==="RATE_LIMITED"?"恢復嘗試過多，請稍後再試":"房號或恢復金鑰錯誤");return}
+    if(row.recovery_code)showRecoveryCode(row.recovery_code,"恢復成功：請保存新的恢復金鑰");
+    await loadOnlineRoom(row.room_id);await enterRoom()
+  }catch(e){console.error(e);toast("恢復失敗："+String(e.message||"未知錯誤"))}
+  finally{$("recoverRoomBtn").disabled=false;initTurnstile()}
+};
+
 $("leaveBtn").onclick=async()=>{try{if(roomChannel&&sb)await sb.removeChannel(roomChannel)}catch{}sessionStorage.removeItem("ktak.v16.roomUuid");sessionStorage.removeItem("ktak.v16.room");location.reload()};
 
 /* navigation */
@@ -1074,7 +1264,7 @@ $("briefSaveBtn").onclick=()=>{
 };
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.9.2",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"2.0",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -2295,53 +2485,130 @@ async function sendChat(){
 $("chatSendBtn").onclick=sendChat;$("chatInput").addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
 
 /* permissions */
+async function loadAudit(){
+  if(role()!=="commander"||!currentRoomUuid)return;
+  const {data,error}=await sb.from("ktak_audit_log")
+    .select("action,actor_user_id,target_user_id,details,created_at")
+    .eq("room_id",currentRoomUuid).order("created_at",{ascending:false}).limit(30);
+  if(error){$("auditList").innerHTML='<div class="muted">稽核紀錄讀取失敗</div>';return}
+  $("auditList").innerHTML="";
+  (data||[]).forEach(a=>{
+    const row=document.createElement("div");row.className="auditRow";
+    const actor=state.users[a.actor_user_id]?.nick||a.actor_user_id?.slice(0,8)||"系統";
+    row.innerHTML=`<b>${escapeHtml(a.action)}</b><br>${escapeHtml(actor)} · ${new Date(a.created_at).toLocaleString()}${a.details?`<br><span class="muted">${escapeHtml(JSON.stringify(a.details))}</span>`:""}`;
+    $("auditList").appendChild(row)
+  });
+  if(!(data||[]).length)$("auditList").innerHTML='<div class="muted">尚無安全管理紀錄</div>'
+}
+
 function renderPermissions(){
-  if(!can('permission')){$("permissionTab").classList.add('hidden');$("roomAdminCard").classList.add('hidden');return}
+  if(!can('permission')){
+    $("permissionTab").classList.add('hidden');$("roomAdminCard").classList.add('hidden');$("securityAdminCard").classList.add('hidden');return
+  }
   $("permissionTab").classList.remove('hidden');$("permissionList").innerHTML='';
+  $("securityAdminCard").classList.remove('hidden');
   $("roomAdminCard").classList.toggle('hidden',currentUserId!==state.meta.creatorId);
+  $("roomExpiryInfo").textContent=state.meta.expiresAt?`房間到期時間：${new Date(state.meta.expiresAt).toLocaleString()}`:"房間到期時間：—";
+
   Object.values(state.users).forEach(u=>{
     const row=document.createElement('div');row.className='permissionRow';
     const info=document.createElement('div');info.className='permissionUser';
-    info.innerHTML=`<b>${escapeHtml(displayName(u))}</b><small>ID ${u.id.slice(0,8)} · ${u.id===state.meta.creatorId?'房間建立者':'加入者'}</small>`;
+    const pending=!u.approved;
+    info.innerHTML=`<b>${escapeHtml(u.nick)}</b>${pending?'<span class="pendingBadge">待核准</span>':'<span class="approvedBadge">已核准</span>'}<small>ID ${u.id.slice(0,8)} · ${u.id===state.meta.creatorId?'目前建立者':pending?`申請 ${roles[u.requestedRole]||u.requestedRole}`:roles[u.role]}</small>`;
+
     const sel=document.createElement('select');
-    Object.entries(roles).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;o.selected=u.role===k;sel.appendChild(o)});
-    sel.onchange=async()=>{
-      const before=u.role;sel.disabled=true;
-      try{
-        const {error}=await sb.rpc("ktak_set_member_role",{p_room_id:currentRoomUuid,p_target_user:u.id,p_role:sel.value});
-        if(error)throw error;await fetchMembers();renderAll()
-      }catch(e){sel.value=before;toast(String(e.message).includes("LAST_COMMANDER")?"房間至少保留一名指揮官":"權限更新失敗："+e.message)}
-      finally{sel.disabled=false}
-    };
-    const clear=document.createElement('button');clear.className='danger';clear.textContent='清除該成員內容';
-    clear.onclick=async()=>{
-      if(!confirm(`清除 ${displayName(u)} 建立的地圖、戰術板與聊天內容？`))return;
-      clear.disabled=true;
-      try{
-        const [chatPhotoRes,mapPhotoRes,boardPhotoRes]=await Promise.all([
-          sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).eq("sender_id",u.id).not("image_path","is",null),
-          sb.from("ktak_map_items").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id),
-          sb.from("ktak_board_objects").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id)
-        ]);
-        if(chatPhotoRes.error)throw chatPhotoRes.error;if(mapPhotoRes.error)throw mapPhotoRes.error;if(boardPhotoRes.error)throw boardPhotoRes.error;
-        const chatPaths=(chatPhotoRes.data||[]).map(x=>x.image_path).filter(Boolean);
-        const mediaPaths=[...(mapPhotoRes.data||[]),...(boardPhotoRes.data||[])].map(x=>x.data?.photoPath).filter(Boolean);
-        if(chatPaths.length)await sb.storage.from("ktak-chat").remove(chatPaths);
-        if(mediaPaths.length)await sb.storage.from("ktak-object-media").remove(mediaPaths);
-        const results=await Promise.all([
-          sb.from("ktak_map_items").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
-          sb.from("ktak_board_objects").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
-          sb.from("ktak_chat_messages").delete().eq("room_id",currentRoomUuid).eq("sender_id",u.id)
-        ]);
-        const bad=results.find(x=>x.error);if(bad)throw bad.error;
-        await Promise.all([fetchMap(),fetchBoard(),fetchChat()]);renderAll();toast("已清除該成員內容")
-      }catch(e){toast("清除失敗："+e.message)}
-      finally{clear.disabled=false}
-    };
-    row.append(info,sel,clear);$("permissionList").appendChild(row)
-  })
+    Object.entries(roles).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;o.selected=(pending?u.requestedRole:u.role)===k;sel.appendChild(o)});
+
+    const actions=document.createElement('div');actions.className='permissionActions';
+
+    if(pending){
+      const approve=document.createElement('button');approve.className='primary';approve.textContent='核准';
+      approve.onclick=async()=>{
+        approve.disabled=true;
+        try{
+          const {error}=await sb.rpc("ktak_set_member_role",{p_room_id:currentRoomUuid,p_target_user:u.id,p_role:sel.value});
+          if(error)throw error;await fetchMembers();renderAll();toast("已核准加入")
+        }catch(e){toast("核准失敗："+e.message)}
+        finally{approve.disabled=false}
+      };
+      actions.appendChild(approve)
+    }else{
+      sel.onchange=async()=>{
+        const before=u.role;sel.disabled=true;
+        try{
+          const {error}=await sb.rpc("ktak_set_member_role",{p_room_id:currentRoomUuid,p_target_user:u.id,p_role:sel.value});
+          if(error)throw error;await fetchMembers();renderAll()
+        }catch(e){sel.value=before;toast(String(e.message).includes("LAST_COMMANDER")?"房間至少保留一名指揮官":"權限更新失敗："+e.message)}
+        finally{sel.disabled=false}
+      }
+    }
+
+    if(u.id!==state.meta.creatorId){
+      const remove=document.createElement('button');remove.className='danger';remove.textContent=pending?'拒絕／移除':'移除成員';
+      remove.onclick=async()=>{
+        if(!confirm(`${pending?'拒絕':'移除'} ${u.nick} 的房間存取權？`))return;
+        remove.disabled=true;
+        try{
+          const {error}=await sb.rpc("ktak_remove_member",{p_room_id:currentRoomUuid,p_target_user:u.id});
+          if(error)throw error;await fetchMembers();renderAll();toast("成員已移除")
+        }catch(e){toast("移除失敗："+e.message)}
+        finally{remove.disabled=false}
+      };
+      actions.appendChild(remove)
+    }
+
+    if(!pending){
+      const clear=document.createElement('button');clear.className='danger';clear.textContent='清除內容';
+      clear.onclick=async()=>{
+        if(!confirm(`清除 ${u.nick} 建立的地圖、戰術板與聊天內容？`))return;
+        clear.disabled=true;
+        try{
+          const [chatPhotoRes,mapPhotoRes,boardPhotoRes]=await Promise.all([
+            sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).eq("sender_id",u.id).not("image_path","is",null),
+            sb.from("ktak_map_items").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+            sb.from("ktak_board_objects").select("data").eq("room_id",currentRoomUuid).eq("owner_id",u.id)
+          ]);
+          if(chatPhotoRes.error)throw chatPhotoRes.error;if(mapPhotoRes.error)throw mapPhotoRes.error;if(boardPhotoRes.error)throw boardPhotoRes.error;
+          const chatPaths=(chatPhotoRes.data||[]).map(x=>x.image_path).filter(Boolean);
+          const mediaPaths=[...(mapPhotoRes.data||[]),...(boardPhotoRes.data||[])].map(x=>x.data?.photoPath).filter(Boolean);
+          if(chatPaths.length)await sb.storage.from("ktak-chat").remove(chatPaths);
+          if(mediaPaths.length)await sb.storage.from("ktak-object-media").remove(mediaPaths);
+          const results=await Promise.all([
+            sb.from("ktak_map_items").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+            sb.from("ktak_board_objects").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+            sb.from("ktak_chat_messages").delete().eq("room_id",currentRoomUuid).eq("sender_id",u.id)
+          ]);
+          const bad=results.find(x=>x.error);if(bad)throw bad.error;
+          await Promise.all([fetchMap(),fetchBoard(),fetchChat()]);renderAll();toast("已清除該成員內容")
+        }catch(e){toast("清除失敗："+e.message)}
+        finally{clear.disabled=false}
+      };
+      actions.appendChild(clear)
+    }
+
+    row.append(info,sel,actions);$("permissionList").appendChild(row)
+  });
+  loadAudit()
 }
 
+$("changeRoomPasswordBtn").onclick=async()=>{
+  const p=$("newRoomPassword").value;
+  if(p.length<8||p.length>72){toast("新密碼需 8～72 碼");return}
+  if(!confirm("確定更換房間密碼？尚未加入的成員之後必須使用新密碼。"))return;
+  const {error}=await sb.rpc("ktak_change_room_password",{p_room_id:currentRoomUuid,p_new_password:p});
+  if(error){toast("密碼更新失敗："+error.message);return}
+  $("newRoomPassword").value="";toast("房間密碼已更新");loadAudit()
+};
+
+$("rotateRecoveryBtn").onclick=async()=>{
+  if(currentUserId!==state.meta.creatorId)return;
+  if(!confirm("產生新恢復金鑰後，舊金鑰會立即失效。確定繼續？"))return;
+  const {data,error}=await sb.rpc("ktak_rotate_recovery_code",{p_room_id:currentRoomUuid});
+  if(error){toast("恢復金鑰更新失敗："+error.message);return}
+  const row=Array.isArray(data)?data[0]:data;
+  if(row?.recovery_code)showRecoveryCode(row.recovery_code,"新的指揮官恢復金鑰");
+  loadAudit()
+};
 
 $("deleteRoomBtn").onclick=async()=>{
   if(currentUserId!==state?.meta?.creatorId){toast("只有房間建立者可以刪除整個房間");return}
@@ -2374,7 +2641,22 @@ $("deleteRoomBtn").onclick=async()=>{
   }
 };
 
-function applyRoleUI(){$("permissionTab").classList.toggle('hidden',!can('permission'));$("briefEditBtn").classList.toggle('hidden',!can('brief')||briefEditing);if(!can('map')){$$('.mapTool:not([data-tool="pan"]),.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.add('disabled'))}else{$$('.mapTool,.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.remove('disabled'))}if(!can('board')){$$('.boardTool:not([data-board-tool="select"]),#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.add('disabled'))}else{$$('.boardTool,#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.remove('disabled'))}}
+function applyRoleUI(){
+  $("permissionTab").classList.toggle('hidden',!can('permission'));
+  $("briefEditBtn").classList.toggle('hidden',!can('brief')||briefEditing);
+  if(!can('map'))$$('.mapTool:not([data-tool="pan"]),.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.add('disabled'));
+  else $$('.mapTool,.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.remove('disabled'));
+
+  if(!can('board'))$$('.boardTool:not([data-board-tool="select"])').forEach(x=>x.classList.add('disabled'));
+  else $$('.boardTool').forEach(x=>x.classList.remove('disabled'));
+
+  const commander=role()==="commander";
+  ['addFloorBtn','deleteFloorBtn','clearBoardBtn','expandCanvasBtn','floorName'].forEach(id=>{
+    const el=$(id);if(!el)return;
+    el.classList.toggle('disabled',!commander);
+    if('disabled' in el)el.disabled=!commander
+  })
+}
 function renderAll(){if(!state)return;$("headerRoom").textContent=roomId;$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()];fillBrief();setBriefEdit(false);renderMapItems();if(!state.board.pages.length)state.board.pages=[{id:uid(),name:'1F',objects:[]}];state.board.active=Math.min(state.board.active,state.board.pages.length-1);renderBoard();renderChat();renderPermissions();applyRoleUI();renderMembers()}
 
 /* restore online room session if possible */
@@ -2386,13 +2668,17 @@ function renderAll(){if(!state)return;$("headerRoom").textContent=roomId;$("head
     const savedRoom=sessionStorage.getItem("ktak.v16.roomUuid");
     if(session?.user&&savedRoom){
       currentUserId=session.user.id;
-      const {data:member,error}=await sb.from("ktak_room_members").select("user_id").eq("room_id",savedRoom).eq("user_id",currentUserId).maybeSingle();
-      if(!error&&member){await loadOnlineRoom(savedRoom);await enterRoom();return}
+      const {data:member,error}=await sb.from("ktak_room_members").select("user_id,approved").eq("room_id",savedRoom).eq("user_id",currentUserId).maybeSingle();
+      if(!error&&member){
+        if(member.approved){await loadOnlineRoom(savedRoom);await enterRoom();return}
+        const savedCode=sessionStorage.getItem("ktak.v16.room")||"房間";
+        await waitForApproval(savedRoom,savedCode,"目前使用者");return
+      }
     }
   }catch(e){console.warn("restore",e)}
   showEntry('home')
 })();
-if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
 })();
 </script>
 </body>

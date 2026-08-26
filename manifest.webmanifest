@@ -1,7 +1,7 @@
 {
-  "name": "KTAK Mission Room V1.9.2 Online",
-  "short_name": "KTAK V1.9.2",
-  "start_url": "./?v=1.9.2-iosfix",
+  "name": "KTAK Mission Room V2.0 Security",
+  "short_name": "KTAK V2.0",
+  "start_url": "./?v=2.0-security",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0a1014",

@@ -1,4 +1,4 @@
-const VERSION="ktak-v192-iosfix-retirement";
+const VERSION="ktak-v20-security-retirement";
 self.addEventListener("install",e=>{self.skipWaiting()});
 self.addEventListener("activate",e=>{
   e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("ktak-")).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))

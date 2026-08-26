@@ -1,27 +1,20 @@
-# KTAK V1.9.2 — iOS 快速資訊整合修正版
+# KTAK V2.0 Security
 
-版本號仍為 V1.9.2，本包已把 iOS / 手機快速資訊修正直接合併進去。
+Security hardening release based on V1.9.2.
 
-## 任務地圖
-- 電腦：滑鼠移到物件，維持深色完整資訊卡。
-- iOS / 手機：快速點同一物件兩下，顯示完全相同的資訊卡。
-- 資訊內容：名稱、備註、建立者、照片小圖。
-- 單擊仍可開原本的物件操作選單，但延後約 0.43 秒，讓雙擊能被 Safari 正確辨識。
-- 長按選取、拖曳、旋轉、縮放不變。
+Deployment order:
+1. Empty test files in Storage buckets.
+2. Run CLEAN_TEST_DATA.sql.
+3. Run V2_0_SECURITY_PATCH.sql.
+4. Configure Cloudflare Turnstile + Supabase CAPTCHA.
+5. Add TURNSTILE_SITE_KEY to the existing config.js.
+6. In Supabase Realtime Settings disable Allow public access.
+7. Upload index.html, sw.js, manifest.webmanifest to GitHub.
+8. Test pending approval / revoke / recovery / private Realtime.
+9. Deploy ktak-cleanup Edge Function and Cron.
 
-## 戰術板
-- 電腦：滑鼠停留，維持完整資訊卡。
-- iOS / 手機：快速點同一物件兩下，顯示相同資訊卡。
-- 單擊仍可開原本操作選單，同樣延後約 0.43 秒。
-- 長按選取／旋轉／縮放不變。
-- V1.9.2 的「友軍／敵軍／門／樓梯優先於方形／圓形」選取規則保留。
-
-## 修正根因
-舊 V1.9.2 的地圖雙擊程式曾引用未宣告的 mapTapMemory；在 strict mode 下手機點擊路徑可能直接失敗。
-本版已正式宣告狀態，並把雙擊判斷移到 pointer-up 流程，避免 iOS Safari 第一個單擊先打開選單、遮住第二個點擊。
-
-## 更新
-- 不需要 Supabase SQL。
-- GitHub 覆蓋 index.html、sw.js、manifest.webmanifest。
-- 不要覆蓋 config.js。
-- 第一次可用 ?v=1.9.2-iosfix 開啟。
+Never upload:
+- sb_secret_...
+- service_role
+- Turnstile Secret key
+- database password
