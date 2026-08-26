@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.6 Online</title>
+<title>KTAK Mission Room V1.7 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -234,12 +234,29 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 .onlineBad{color:#ff7b7b}
 .onlineWait{color:#ffc650}
 
+
+/* V1.7 iOS board interaction fix */
+#boardStage,#boardWrap,#boardCanvas{
+  -webkit-touch-callout:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-user-drag:none!important;
+}
+#boardCanvas{
+  touch-action:none!important;
+  -webkit-tap-highlight-color:transparent;
+}
+.roomDangerBox{
+  border:1px solid #7c3737!important;
+  background:linear-gradient(180deg,#211416,#171013)!important;
+}
+.roomDangerBox p{color:#cbb9bb;font-size:11px;line-height:1.55;margin:6px 0 10px}
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.6 · 線上多人版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.7 · 線上多人修正版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -309,7 +326,7 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <section id="chatPage" class="page"><div class="chatShell"><div class="chatInfo"><div><b>聊天室</b><div class="muted">觀察員僅能觀看；其他角色可發言。指揮官可刪除房間內訊息。可傳送文字或照片。</div></div><div class="memberList" id="memberList"></div></div><div id="chatLog"></div><div><div id="chatPhotoPreview" class="chatPhotoPreview hidden"><img id="chatPhotoPreviewImg"><div class="photoInfo"><div class="label">待傳送照片</div><div id="chatPhotoName" class="photoName"></div></div><button id="chatPhotoClearBtn" class="danger">移除</button></div><div class="chatInput"><input id="chatPhotoInput" class="hidden" type="file" accept="image/*"><button id="chatPhotoBtn" class="chatPhotoBtn" title="插入照片">📷</button><input id="chatInput" placeholder="輸入訊息…"><button id="chatSendBtn" class="primary">送出</button></div></div></div></section>
 
-<section id="permissionPage" class="page"><div class="shell"><div class="sectionTitle">房間權限</div><div class="card"><h2>角色規則</h2><div class="grid2"><div class="valueBox">指揮官權限：可編輯簡報、地圖、照片、戰術板、聊天室及成員權限；可刪除任何人的內容。</div><div class="valueBox">特勤人員 / 偵查隊：可繪製地圖、插入照片、使用戰術板與聊天室；只能刪除自己建立的內容。</div><div class="valueBox">觀察員：只能觀看，不可繪製、上傳或發言。</div><div class="valueBox">房間建立者固定以「特勤指揮官・暱稱」顯示，預設具有指揮官權限。</div></div></div><div class="card"><h2>加入者權限</h2><div id="permissionList"></div></div></div></section>
+<section id="permissionPage" class="page"><div class="shell"><div class="sectionTitle">房間權限</div><div class="card"><h2>角色規則</h2><div class="grid2"><div class="valueBox">指揮官權限：可編輯簡報、地圖、照片、戰術板、聊天室及成員權限；可刪除任何人的內容。</div><div class="valueBox">特勤人員 / 偵查隊：可繪製地圖、插入照片、使用戰術板與聊天室；只能刪除自己建立的內容。</div><div class="valueBox">觀察員：只能觀看，不可繪製、上傳或發言。</div><div class="valueBox">房間建立者固定以「特勤指揮官・暱稱」顯示，預設具有指揮官權限。</div></div></div><div class="card"><h2>加入者權限</h2><div id="permissionList"></div></div><div id="roomAdminCard" class="card roomDangerBox hidden"><h2>房間管理</h2><p>只有原始房間建立者可以刪除整個房間。刪除後，任務簡報、地圖、戰術板、聊天室與聊天室照片都會移除，原房號即可再次建立。</p><button id="deleteRoomBtn" class="danger" style="width:100%">刪除整個房間並釋放房號</button></div></div></section>
 </main>
 </div>
 
@@ -602,7 +619,7 @@ function setBriefEdit(on){if(on&&!can("brief")){toast("只有指揮官權限可�
 $("executionMode").onchange=()=>$("executionOtherWrap").classList.toggle("hidden",$("executionMode").value!=="其他");$("briefEditBtn").onclick=()=>setBriefEdit(true);$("briefSaveBtn").onclick=()=>{briefIds.forEach(id=>state.brief[id]=$(id).value);fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")};
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.6",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.7",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const x=JSON.parse(await f.text()),incoming=x.state||x;
@@ -1269,6 +1286,8 @@ canvas.addEventListener('pointercancel',e=>{
   if(endBoardPointerTracking(e)){e.preventDefault();e.stopImmediatePropagation()}
 },{capture:true,passive:false});
 
+canvas.addEventListener('selectstart',e=>e.preventDefault());
+canvas.addEventListener('dragstart',e=>e.preventDefault());
 canvas.addEventListener('contextmenu',e=>{e.preventDefault();const p=boardPoint(e),o=findBoardAt(p);if(o)showBoardMenu(o,e.clientX,e.clientY)});
 canvas.addEventListener('pointerdown',e=>{
   if(boardPinching||boardPointers.size>=2)return;
@@ -1451,8 +1470,9 @@ $("chatSendBtn").onclick=sendChat;$("chatInput").addEventListener('keydown',e=>{
 
 /* permissions */
 function renderPermissions(){
-  if(!can('permission')){$("permissionTab").classList.add('hidden');return}
+  if(!can('permission')){$("permissionTab").classList.add('hidden');$("roomAdminCard").classList.add('hidden');return}
   $("permissionTab").classList.remove('hidden');$("permissionList").innerHTML='';
+  $("roomAdminCard").classList.toggle('hidden',currentUserId!==state.meta.creatorId);
   Object.values(state.users).forEach(u=>{
     const row=document.createElement('div');row.className='permissionRow';
     const info=document.createElement('div');info.className='permissionUser';
@@ -1487,6 +1507,36 @@ function renderPermissions(){
     row.append(info,sel,clear);$("permissionList").appendChild(row)
   })
 }
+
+
+$("deleteRoomBtn").onclick=async()=>{
+  if(currentUserId!==state?.meta?.creatorId){toast("只有房間建立者可以刪除整個房間");return}
+  if(!confirm(`確定要刪除房間 ${roomId}？\n\n這會永久刪除任務簡報、地圖、戰術板、聊天室與照片，且無法復原。`))return;
+  const verify=(prompt(`最後確認：請輸入房號 ${roomId}`)||"").trim().toUpperCase();
+  if(verify!==roomId){toast("房號不一致，已取消刪除");return}
+  const btn=$("deleteRoomBtn");btn.disabled=true;
+  try{
+    const {data:photos,error:pe}=await sb.from("ktak_chat_messages")
+      .select("image_path").eq("room_id",currentRoomUuid).not("image_path","is",null);
+    if(pe)throw pe;
+    const paths=(photos||[]).map(x=>x.image_path).filter(Boolean);
+    if(paths.length){
+      const {error:se}=await sb.storage.from("ktak-chat").remove(paths);
+      if(se)throw se
+    }
+    const {error}=await sb.rpc("ktak_delete_room",{p_room_id:currentRoomUuid});
+    if(error)throw error;
+    try{if(roomChannel)await sb.removeChannel(roomChannel)}catch{}
+    sessionStorage.removeItem("ktak.v16.roomUuid");
+    sessionStorage.removeItem("ktak.v16.room");
+    alert(`房間 ${roomId} 已刪除，這個房號現在可以重新使用。`);
+    location.reload()
+  }catch(e){
+    console.error(e);
+    toast("刪除房間失敗："+(e.message||"未知錯誤"));
+    btn.disabled=false
+  }
+};
 
 function applyRoleUI(){$("permissionTab").classList.toggle('hidden',!can('permission'));$("briefEditBtn").classList.toggle('hidden',!can('brief')||briefEditing);if(!can('map')){$$('.mapTool:not([data-tool="pan"]),.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.add('disabled'))}else{$$('.mapTool,.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.remove('disabled'))}if(!can('board')){$$('.boardTool:not([data-board-tool="select"]),#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.add('disabled'))}else{$$('.boardTool,#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.remove('disabled'))}}
 function renderAll(){if(!state)return;$("headerRoom").textContent=roomId;$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()];fillBrief();setBriefEdit(false);renderMapItems();if(!state.board.pages.length)state.board.pages=[{id:uid(),name:'1F',objects:[]}];state.board.active=Math.min(state.board.active,state.board.pages.length-1);renderBoard();renderChat();renderPermissions();applyRoleUI();renderMembers()}
