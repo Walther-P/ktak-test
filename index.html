@@ -10,7 +10,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>KTAK Mission Room V1.5</title>
+<title>KTAK Mission Room V1.6 Online</title>
 <style>
 :root{--bg:#0a1014;--panel:#111a20;--panel2:#17232b;--line:#30424d;--text:#eff6f8;--muted:#98aab4;--blue:#45aff2;--green:#55d572;--yellow:#ffc650;--red:#f25c5c;--orange:#ff944c;--safe:env(safe-area-inset-bottom,0px);--safeTop:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -212,12 +212,34 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
   .floorSideList{display:none}
 }
 
+
+/* V1.6 Online - chat photo only UI addition */
+.chatInput{grid-template-columns:auto 1fr auto}
+.chatPhotoBtn{min-width:44px;padding:8px 10px}
+.chatPhotoPreview{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 9px;border:1px solid #344955;border-radius:10px;
+  background:#101a20;margin-bottom:7px
+}
+.chatPhotoPreview img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #435762}
+.chatPhotoPreview .photoInfo{flex:1;min-width:0}
+.chatPhotoPreview .photoName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.chatPhoto{
+  display:block;max-width:min(100%,420px);max-height:420px;
+  margin-top:7px;border-radius:10px;border:1px solid #3d5360;
+  object-fit:contain;background:#081014;cursor:pointer
+}
+.chatText:empty{display:none}
+.onlineOk{color:#6fda8a}
+.onlineBad{color:#ff7b7b}
+.onlineWait{color:#ffc650}
+
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.5 · 地圖提示與大畫布版</small></div></div>
+  <div class="brand"><div class="logo">K</div><div class="brandText"><b>KTAK Mission Room</b><small>V1.6 · 線上多人版</small></div></div>
   <div class="roomStatus"><span class="dot"></span><span id="headerRoom">ROOM</span><span>·</span><span id="headerNick">未登入</span><span id="headerRole" class="roleBadge">—</span><button id="leaveBtn" style="padding:6px 8px;font-size:10px">離開</button></div>
 </header>
 <nav>
@@ -285,14 +307,14 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 <div class="boardStage" id="boardStage"><div class="boardZoomBadge" id="boardZoomBadge">戰術板 100% · 雙指縮放</div><div class="mapTopMobile" style="top:8px;right:8px"><button id="boardToolsMobile">☰ 工具</button></div><div class="boardPaperArea"><div id="boardWrap"><canvas id="boardCanvas" width="2000" height="1400"></canvas></div><div id="floorTabs" class="floorTabs"></div></div></div>
 </div></section>
 
-<section id="chatPage" class="page"><div class="chatShell"><div class="chatInfo"><div><b>聊天室</b><div class="muted">觀察員僅能觀看；其他角色可發言。指揮官可刪除房間內訊息。</div></div><div class="memberList" id="memberList"></div></div><div id="chatLog"></div><div class="chatInput"><input id="chatInput" placeholder="輸入訊息…"><button id="chatSendBtn" class="primary">送出</button></div></div></section>
+<section id="chatPage" class="page"><div class="chatShell"><div class="chatInfo"><div><b>聊天室</b><div class="muted">觀察員僅能觀看；其他角色可發言。指揮官可刪除房間內訊息。可傳送文字或照片。</div></div><div class="memberList" id="memberList"></div></div><div id="chatLog"></div><div><div id="chatPhotoPreview" class="chatPhotoPreview hidden"><img id="chatPhotoPreviewImg"><div class="photoInfo"><div class="label">待傳送照片</div><div id="chatPhotoName" class="photoName"></div></div><button id="chatPhotoClearBtn" class="danger">移除</button></div><div class="chatInput"><input id="chatPhotoInput" class="hidden" type="file" accept="image/*"><button id="chatPhotoBtn" class="chatPhotoBtn" title="插入照片">📷</button><input id="chatInput" placeholder="輸入訊息…"><button id="chatSendBtn" class="primary">送出</button></div></div></div></section>
 
 <section id="permissionPage" class="page"><div class="shell"><div class="sectionTitle">房間權限</div><div class="card"><h2>角色規則</h2><div class="grid2"><div class="valueBox">指揮官權限：可編輯簡報、地圖、照片、戰術板、聊天室及成員權限；可刪除任何人的內容。</div><div class="valueBox">特勤人員 / 偵查隊：可繪製地圖、插入照片、使用戰術板與聊天室；只能刪除自己建立的內容。</div><div class="valueBox">觀察員：只能觀看，不可繪製、上傳或發言。</div><div class="valueBox">房間建立者固定以「特勤指揮官・暱稱」顯示，預設具有指揮官權限。</div></div></div><div class="card"><h2>加入者權限</h2><div id="permissionList"></div></div></div></section>
 </main>
 </div>
 
 <div class="overlay" id="entryOverlay"><div class="entryCard">
-  <div id="entryHome"><h1>KTAK 任務房間</h1><p>建立新任務房間，或加入既有房間。建立者自動成為特勤指揮官。</p><div class="entryActions"><button id="showCreateBtn" class="primary">＋ 創建房間</button><button id="showJoinBtn">→ 加入房間</button></div><div class="muted" style="margin-top:12px">V1.5 仍以同一瀏覽器分頁作為多人同步原型；真正跨手機 / 電腦的網路房間會在後端版接上。</div></div>
+  <div id="entryHome"><h1>KTAK 任務房間</h1><p>建立新任務房間，或加入既有房間。建立者自動成為特勤指揮官。</p><div class="entryActions"><button id="showCreateBtn" class="primary">＋ 創建房間</button><button id="showJoinBtn">→ 加入房間</button></div><div class="muted" style="margin-top:12px"><span id="onlineStatus">正在檢查線上服務…</span></div></div>
   <div id="createForm" class="hidden"><div class="formTitle">創建房間</div><div class="stack"><input id="createRoom" placeholder="設定房號，例如 A102"><input id="createPassword" type="password" placeholder="密碼（可留空）"><input id="createNick" placeholder="你的暱稱"><div class="row"><button class="backEntry">返回</button><button id="createRoomBtn" class="primary" style="flex:1">創建並進入</button></div></div></div>
   <div id="joinForm" class="hidden"><div class="formTitle">加入房間</div><div class="stack"><input id="joinRoom" placeholder="房號"><input id="joinPassword" type="password" placeholder="密碼（房間無密碼則留空）"><input id="joinNick" placeholder="你的暱稱"><select id="joinRole"><option value="tactical">特勤人員</option><option value="recon">偵查隊</option><option value="observer">觀察員</option></select><div class="row"><button class="backEntry">返回</button><button id="joinRoomBtn" class="primary" style="flex:1">加入</button></div></div></div>
 </div></div>
@@ -327,29 +349,248 @@ main{position:relative;min-height:0;overflow:hidden}.page{display:none;height:10
 
 <div id="toast"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
 "use strict";
 const $=id=>document.getElementById(id), $$=sel=>Array.from(document.querySelectorAll(sel));
-const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2), now=()=>new Date().toISOString(), clone=o=>JSON.parse(JSON.stringify(o));
+const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16)), now=()=>new Date().toISOString(), clone=o=>JSON.parse(JSON.stringify(o));
 const roles={commander:"指揮官權限",tactical:"特勤人員",recon:"偵查隊",observer:"觀察員"};
-let roomId="",currentUserId="",bc=null,presence={},state=null;
-function blankState(room,passwordHash,creator){return {schema:2,meta:{room,passwordHash,creatorId:creator.id,createdAt:now()},users:{[creator.id]:creator},brief:{caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",missionNotes:""},map:{items:[]},board:{pages:[{id:uid(),name:"1F",objects:[]}],active:0,canvasW:2000,canvasH:1400},chat:[],updatedAt:now()}}
-function user(){return state?.users?.[currentUserId]||null} function role(){return user()?.role||"observer"}
-function displayName(u=user()){if(!u)return "未登入";if(u.id===state.meta.creatorId)return `特勤指揮官・${u.nick}`;if(u.role==="commander")return `指揮官・${u.nick}`;return `${roles[u.role]}・${u.nick}`}
-function can(action){const r=role();if(r==="commander")return true;if(action==="map"||action==="board"||action==="chat")return r==="tactical"||r==="recon";return false}
+const defaultBrief=()=>({caseType:"",riskLevel:"中",suspectCount:"",suspectBackground:"",executionMode:"包圍消耗",executionOther:"",civilianCount:"",teamComposition:"",missionNotes:""});
+const defaultBoard=()=>({pages:[],active:0,canvasW:2000,canvasH:1400});
+let roomId="",currentRoomUuid="",currentUserId="",presence={},state=null;
+let sb=null,roomChannel=null,onlineReady=false,syncChain=Promise.resolve(),syncSnapshot={brief:null,map:null,board:null};
+let refreshTimers={};
+const cfg=window.KTAK_CONFIG||{};
+const configReady=!!(cfg.SUPABASE_URL&&cfg.SUPABASE_PUBLISHABLE_KEY&&!String(cfg.SUPABASE_URL).includes("YOUR_")&&!String(cfg.SUPABASE_PUBLISHABLE_KEY).includes("YOUR_"));
+
+function blankState(room,creatorId=""){return {schema:3,meta:{room,roomUuid:"",creatorId,createdAt:now()},users:{},brief:defaultBrief(),map:{items:[]},board:defaultBoard(),chat:[],updatedAt:now()}}
+function user(){return state?.users?.[currentUserId]||null}
+function role(){return user()?.role||"observer"}
+function displayName(u=user()){
+  if(!u)return "未登入";
+  if(u.id===state?.meta?.creatorId)return `特勤指揮官・${u.nick}`;
+  if(u.role==="commander")return `指揮官・${u.nick}`;
+  return `${roles[u.role]||"成員"}・${u.nick}`
+}
+function can(action){
+  const r=role();
+  if(r==="commander")return true;
+  if(action==="map"||action==="board"||action==="chat")return r==="tactical"||r==="recon";
+  return false
+}
 function canEditItem(item){return role()==="commander"||item.ownerId===currentUserId}
-function storageKey(room=roomId){return `ktak.v11.room.${room}`} function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.remove("show"),1800)}
-async function hashPassword(s){if(!s)return "";if(crypto.subtle){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}return btoa(unescape(encodeURIComponent(s)))}
-function save(){if(!state)return;state.updatedAt=now();localStorage.setItem(storageKey(),JSON.stringify(state))} function loadRoom(r){try{return JSON.parse(localStorage.getItem(storageKey(r))||"null")}catch{return null}}
-function publish(){save();if(bc)bc.postMessage({type:"full",state:clone(state),sender:currentUserId})}
-function setupBC(){if(bc)bc.close();if("BroadcastChannel" in window){bc=new BroadcastChannel("ktak-v11-"+roomId);bc.onmessage=e=>{const m=e.data||{};if(m.sender===currentUserId)return;if(m.type==="full"&&m.state){state=m.state;save();renderAll()}if(m.type==="request")bc.postMessage({type:"full",state:clone(state),sender:currentUserId});if(m.type==="presence"){presence[m.userId]={name:m.name,ts:Date.now()};renderMembers()}};bc.postMessage({type:"request",sender:currentUserId});bc.postMessage({type:"presence",userId:currentUserId,name:displayName(),sender:currentUserId});setInterval(()=>{if(bc){bc.postMessage({type:"presence",userId:currentUserId,name:displayName(),sender:currentUserId});presence[currentUserId]={name:displayName(),ts:Date.now()};renderMembers()}},5000)}}
-function enterRoom(){sessionStorage.setItem("ktak.v11.user",currentUserId);sessionStorage.setItem("ktak.v11.room",roomId);$("entryOverlay").classList.add("hidden");setupBC();renderAll()}
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.remove("show"),2200)}
+function storageKey(room=roomId){return `ktak.v16.cache.${room}`}
+function save(){if(!state)return;state.updatedAt=now();try{localStorage.setItem(storageKey(),JSON.stringify(state))}catch{}}
+function jsonSame(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function validUuid(s){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||""))}
+function safeUuid(){if(crypto.randomUUID)return crypto.randomUUID();return "10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(+c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>+c/4).toString(16))}
+function ensureObjectUuid(obj){if(!validUuid(obj.id))obj.id=safeUuid();return obj}
+function onlineStatus(text,kind="wait"){const el=$("onlineStatus");if(!el)return;el.textContent=text;el.className=kind==="ok"?"onlineOk":kind==="bad"?"onlineBad":"onlineWait"}
+
+async function initBackend(){
+  if(!configReady){onlineStatus("尚未設定 Supabase：請先完成 V1.6 SETUP 步驟","bad");return false}
+  if(!window.supabase?.createClient){onlineStatus("Supabase 程式庫載入失敗","bad");return false}
+  try{
+    sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
+    });
+    onlineStatus("線上服務已設定；建立／加入房間時會連線","ok");
+    return true
+  }catch(e){console.error(e);onlineStatus("Supabase 初始化失敗","bad");return false}
+}
+async function ensureAuth(){
+  if(!sb&&!(await initBackend()))throw new Error("尚未設定線上服務");
+  const {data:{session},error:sErr}=await sb.auth.getSession();
+  if(sErr)throw sErr;
+  if(session?.user){currentUserId=session.user.id;return session.user}
+  const {data,error}=await sb.auth.signInAnonymously();
+  if(error)throw error;
+  currentUserId=data.user.id;
+  return data.user
+}
+function mapDbRow(r){const d=clone(r.data||{});d.id=r.id;d.ownerId=r.owner_id;return d}
+function boardDbObject(r){const d=clone(r.data||{});d.id=r.id;d.ownerId=r.owner_id;return d}
+function chatDbRow(r){return {id:r.id,senderId:r.sender_id,senderName:r.sender_name||"成員",text:r.text||"",imagePath:r.image_path||null,ts:r.created_at}}
+
+async function fetchMembers(){
+  const {data,error}=await sb.from("ktak_room_members").select("user_id,nick,role,joined_at").eq("room_id",currentRoomUuid).order("joined_at");
+  if(error)throw error;
+  state.users={};
+  (data||[]).forEach(m=>state.users[m.user_id]={id:m.user_id,nick:m.nick,role:m.role,joinedAt:m.joined_at});
+}
+async function fetchBrief(){
+  const {data,error}=await sb.from("ktak_brief").select("data").eq("room_id",currentRoomUuid).single();
+  if(error)throw error;
+  state.brief={...defaultBrief(),...(data?.data||{})};
+  syncSnapshot.brief=clone(state.brief)
+}
+async function fetchMap(){
+  const {data,error}=await sb.from("ktak_map_items").select("id,owner_id,data").eq("room_id",currentRoomUuid);
+  if(error)throw error;
+  state.map={items:(data||[]).map(mapDbRow)};
+  syncSnapshot.map=clone(state.map)
+}
+async function fetchBoard(){
+  const keepActive=state?.board?.active||0;
+  const [settingsRes,pagesRes,objectsRes]=await Promise.all([
+    sb.from("ktak_board_settings").select("canvas_w,canvas_h").eq("room_id",currentRoomUuid).single(),
+    sb.from("ktak_board_pages").select("id,name,sort_index").eq("room_id",currentRoomUuid).order("sort_index"),
+    sb.from("ktak_board_objects").select("id,page_id,owner_id,data").eq("room_id",currentRoomUuid)
+  ]);
+  if(settingsRes.error)throw settingsRes.error;if(pagesRes.error)throw pagesRes.error;if(objectsRes.error)throw objectsRes.error;
+  const objByPage={};
+  (objectsRes.data||[]).forEach(r=>(objByPage[r.page_id]??=[]).push(boardDbObject(r)));
+  const pages=(pagesRes.data||[]).map(p=>({id:p.id,name:p.name,objects:objByPage[p.id]||[]}));
+  state.board={pages,active:Math.max(0,Math.min(keepActive,pages.length-1)),canvasW:settingsRes.data?.canvas_w||2000,canvasH:settingsRes.data?.canvas_h||1400};
+  syncSnapshot.board=clone({...state.board,active:0})
+}
+async function fetchChat(){
+  const {data,error}=await sb.from("ktak_chat_messages").select("id,sender_id,sender_name,text,image_path,created_at").eq("room_id",currentRoomUuid).order("created_at",{ascending:true}).limit(300);
+  if(error)throw error;
+  state.chat=(data||[]).map(chatDbRow)
+}
+async function loadOnlineRoom(roomUuid){
+  currentRoomUuid=roomUuid;
+  const {data:room,error}=await sb.from("ktak_rooms").select("id,code,creator_user_id,created_at").eq("id",roomUuid).single();
+  if(error)throw error;
+  roomId=room.code;
+  state=blankState(room.code,room.creator_user_id);
+  state.meta.roomUuid=room.id;state.meta.createdAt=room.created_at;
+  await Promise.all([fetchMembers(),fetchBrief(),fetchMap(),fetchBoard(),fetchChat()]);
+  save()
+}
+
+function collectionById(items){const m=new Map();(items||[]).forEach(x=>m.set(x.id,x));return m}
+async function syncMap(target){
+  const old=syncSnapshot.map||{items:[]},oldM=collectionById(old.items),newM=collectionById(target.items);
+  const up=[];
+  for(const item0 of target.items){
+    const item=ensureObjectUuid(clone(item0));
+    if(!item.ownerId)item.ownerId=currentUserId;
+    const prev=oldM.get(item.id);
+    if(!prev||!jsonSame(prev,item))up.push({id:item.id,room_id:currentRoomUuid,owner_id:item.ownerId,data:item,updated_by:currentUserId})
+  }
+  const removed=[...oldM.keys()].filter(id=>!newM.has(id));
+  if(up.length){const {error}=await sb.from("ktak_map_items").upsert(up,{onConflict:"id"});if(error)throw error}
+  if(removed.length){const {error}=await sb.from("ktak_map_items").delete().eq("room_id",currentRoomUuid).in("id",removed);if(error)throw error}
+  syncSnapshot.map=clone(target)
+}
+function flattenBoardObjects(board){
+  const out=[];(board.pages||[]).forEach(p=>(p.objects||[]).forEach(o=>out.push({pageId:p.id,obj:o})));return out
+}
+async function syncBoard(target0){
+  const target=clone(target0),old=syncSnapshot.board||{pages:[],canvasW:2000,canvasH:1400};
+  if(old.canvasW!==target.canvasW||old.canvasH!==target.canvasH){
+    const {error}=await sb.from("ktak_board_settings").update({canvas_w:target.canvasW,canvas_h:target.canvasH,updated_by:currentUserId}).eq("room_id",currentRoomUuid);
+    if(error)throw error
+  }
+  const oldPages=collectionById(old.pages),newPages=collectionById(target.pages),pageUp=[];
+  target.pages.forEach((p,i)=>{
+    ensureObjectUuid(p);
+    const prev=oldPages.get(p.id);
+    if(!prev||prev.name!==p.name||old.pages.findIndex(x=>x.id===p.id)!==i)pageUp.push({id:p.id,room_id:currentRoomUuid,name:p.name||`${i+1}F`,sort_index:i,updated_by:currentUserId})
+  });
+  const removedPages=[...oldPages.keys()].filter(id=>!newPages.has(id));
+  if(pageUp.length){const {error}=await sb.from("ktak_board_pages").upsert(pageUp,{onConflict:"id"});if(error)throw error}
+  if(removedPages.length){const {error}=await sb.from("ktak_board_pages").delete().eq("room_id",currentRoomUuid).in("id",removedPages);if(error)throw error}
+
+  const oldObjs=flattenBoardObjects(old),newObjs=flattenBoardObjects(target),oldO=new Map(oldObjs.map(x=>[x.obj.id,x])),newO=new Map(newObjs.map(x=>[x.obj.id,x])),objUp=[];
+  for(const entry of newObjs){
+    const o=ensureObjectUuid(clone(entry.obj));if(!o.ownerId)o.ownerId=currentUserId;
+    const prev=oldO.get(o.id);
+    if(!prev||prev.pageId!==entry.pageId||!jsonSame(prev.obj,o))objUp.push({id:o.id,room_id:currentRoomUuid,page_id:entry.pageId,owner_id:o.ownerId,data:o,updated_by:currentUserId})
+  }
+  const removedObjs=[...oldO.keys()].filter(id=>!newO.has(id));
+  if(objUp.length){const {error}=await sb.from("ktak_board_objects").upsert(objUp,{onConflict:"id"});if(error)throw error}
+  if(removedObjs.length){const {error}=await sb.from("ktak_board_objects").delete().eq("room_id",currentRoomUuid).in("id",removedObjs);if(error)throw error}
+  syncSnapshot.board=clone({...target,active:0})
+}
+async function syncBrief(target){
+  const {error}=await sb.from("ktak_brief").update({data:target,updated_by:currentUserId}).eq("room_id",currentRoomUuid);
+  if(error)throw error;syncSnapshot.brief=clone(target)
+}
+function publish(){
+  save();
+  if(!onlineReady||!sb||!currentRoomUuid)return;
+  const target={brief:clone(state.brief),map:clone(state.map),board:clone({...state.board,active:0})};
+  syncChain=syncChain.then(async()=>{
+    if(can("brief")&&!jsonSame(syncSnapshot.brief,target.brief))await syncBrief(target.brief);
+    if(can("map")&&!jsonSame(syncSnapshot.map,target.map))await syncMap(target.map);
+    if(can("board")&&!jsonSame(syncSnapshot.board,target.board))await syncBoard(target.board)
+  }).catch(err=>{console.error("sync",err);toast("同步失敗："+(err.message||"未知錯誤"))})
+}
+function scheduleRefresh(kind,fn){
+  clearTimeout(refreshTimers[kind]);refreshTimers[kind]=setTimeout(async()=>{try{await fn();save();if(kind==="members"){renderPermissions();applyRoleUI();renderMembers();$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()]}else if(kind==="brief"){fillBrief()}else if(kind==="map"){renderMapItems()}else if(kind==="board"){renderBoard()}else if(kind==="chat"){renderChat()}}catch(e){console.error(e)}},80)
+}
+async function setupRealtime(){
+  if(roomChannel)await sb.removeChannel(roomChannel);
+  roomChannel=sb.channel(`ktak-room-${currentRoomUuid}`,{config:{presence:{key:currentUserId}}})
+    .on("presence",{event:"sync"},()=>{
+      presence={};const ps=roomChannel.presenceState();
+      Object.values(ps).flat().forEach(p=>{if(p?.userId)presence[p.userId]={name:p.name||"成員",role:p.role||"",ts:Date.now()}});
+      renderMembers()
+    })
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_room_members",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("members",fetchMembers))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_brief",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("brief",fetchBrief))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_map_items",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("map",fetchMap))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_board_settings",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("board",fetchBoard))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_board_pages",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("board",fetchBoard))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_board_objects",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("board",fetchBoard))
+    .on("postgres_changes",{event:"*",schema:"public",table:"ktak_chat_messages",filter:`room_id=eq.${currentRoomUuid}`},()=>scheduleRefresh("chat",fetchChat))
+    .subscribe(async status=>{
+      if(status==="SUBSCRIBED"){
+        onlineReady=true;
+        await roomChannel.track({userId:currentUserId,name:displayName(),role:role(),onlineAt:now()});
+        toast("線上房間已連線")
+      }
+      if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")toast("即時連線異常，正在重試")
+    })
+}
+async function enterRoom(){
+  sessionStorage.setItem("ktak.v16.roomUuid",currentRoomUuid);
+  sessionStorage.setItem("ktak.v16.room",roomId);
+  $("entryOverlay").classList.add("hidden");
+  renderAll();
+  await setupRealtime()
+}
 function showEntry(which){$("entryHome").classList.toggle("hidden",which!=="home");$("createForm").classList.toggle("hidden",which!=="create");$("joinForm").classList.toggle("hidden",which!=="join")}
-$("showCreateBtn").onclick=()=>showEntry("create");$("showJoinBtn").onclick=()=>showEntry("join");$$('.backEntry').forEach(b=>b.onclick=()=>showEntry("home"));
-$("createRoomBtn").onclick=async()=>{const r=$("createRoom").value.trim().toUpperCase(),nick=$("createNick").value.trim(),pass=$("createPassword").value;if(!r||!nick){toast("請輸入房號與暱稱");return}if(loadRoom(r)&&!confirm("此瀏覽器已有同房號資料，確定覆蓋？"))return;currentUserId=uid();roomId=r;const creator={id:currentUserId,nick,role:"commander",joinedAt:now()};state=blankState(r,await hashPassword(pass),creator);save();enterRoom()};
-$("joinRoomBtn").onclick=async()=>{const r=$("joinRoom").value.trim().toUpperCase(),nick=$("joinNick").value.trim(),pass=$("joinPassword").value,requested=$("joinRole").value;if(!r||!nick){toast("請輸入房號與暱稱");return}const s=loadRoom(r);if(!s){alert("這台裝置目前找不到此房間。V1.3 尚未接跨裝置後端；請先在同一瀏覽器分頁測試，或匯入任務檔。");return}if((s.meta.passwordHash||"")!==(await hashPassword(pass))){toast("房間密碼錯誤");return}roomId=r;state=s;currentUserId=uid();state.users[currentUserId]={id:currentUserId,nick,role:requested,joinedAt:now()};save();enterRoom()};
-$("leaveBtn").onclick=()=>{if(bc)bc.close();sessionStorage.removeItem("ktak.v11.user");sessionStorage.removeItem("ktak.v11.room");location.reload()};
+$("showCreateBtn").onclick=()=>showEntry("create");$("showJoinBtn").onclick=()=>showEntry("join");$$(".backEntry").forEach(b=>b.onclick=()=>showEntry("home"));
+
+$("createRoomBtn").onclick=async()=>{
+  const r=$("createRoom").value.trim().toUpperCase(),nick=$("createNick").value.trim(),pass=$("createPassword").value;
+  if(!r||!nick){toast("請輸入房號與暱稱");return}
+  try{
+    $("createRoomBtn").disabled=true;await ensureAuth();
+    const {data,error}=await sb.rpc("ktak_create_room",{p_code:r,p_password:pass,p_nick:nick});
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row?.room_id)throw new Error("建立房間失敗");
+    await loadOnlineRoom(row.room_id);await enterRoom()
+  }catch(e){
+    console.error(e);
+    if(String(e.message).includes("ROOM_EXISTS"))toast("這個房號已存在，請換一個房號");
+    else toast("建立失敗："+e.message)
+  }finally{$("createRoomBtn").disabled=false}
+};
+$("joinRoomBtn").onclick=async()=>{
+  const r=$("joinRoom").value.trim().toUpperCase(),nick=$("joinNick").value.trim(),pass=$("joinPassword").value,requested=$("joinRole").value;
+  if(!r||!nick){toast("請輸入房號與暱稱");return}
+  try{
+    $("joinRoomBtn").disabled=true;await ensureAuth();
+    const {data,error}=await sb.rpc("ktak_join_room",{p_code:r,p_password:pass,p_nick:nick,p_requested_role:requested});
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row?.room_id)throw new Error("加入房間失敗");
+    await loadOnlineRoom(row.room_id);await enterRoom()
+  }catch(e){
+    console.error(e);const msg=String(e.message||"");
+    if(msg.includes("ROOM_NOT_FOUND"))toast("找不到這個房間");
+    else if(msg.includes("BAD_PASSWORD"))toast("房間密碼錯誤");
+    else toast("加入失敗："+msg)
+  }finally{$("joinRoomBtn").disabled=false}
+};
+$("leaveBtn").onclick=async()=>{try{if(roomChannel&&sb)await sb.removeChannel(roomChannel)}catch{}sessionStorage.removeItem("ktak.v16.roomUuid");sessionStorage.removeItem("ktak.v16.room");location.reload()};
 
 /* navigation */
 $$('.navBtn').forEach(b=>b.onclick=()=>{if(b.id==="permissionTab"&&!can("permission"))return;$$('.navBtn').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='mapPage')setTimeout(()=>map.invalidateSize(),60);if(b.dataset.page==='boardPage')setTimeout(renderBoard,30);if(b.dataset.page==='chatPage')renderChat();if(b.dataset.page==='permissionPage')renderPermissions()});
@@ -361,7 +602,21 @@ function setBriefEdit(on){if(on&&!can("brief")){toast("只有指揮官權限可�
 $("executionMode").onchange=()=>$("executionOtherWrap").classList.toggle("hidden",$("executionMode").value!=="其他");$("briefEditBtn").onclick=()=>setBriefEdit(true);$("briefSaveBtn").onclick=()=>{briefIds.forEach(id=>state.brief[id]=$(id).value);fillBrief();setBriefEdit(false);publish();toast("任務簡報已儲存")};
 
 /* export import */
-$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.5",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text()),incoming=x.state||x;if(!incoming||incoming.schema!==2)throw new Error("格式不相容");state=incoming;roomId=incoming.meta.room;save();publish();renderAll();toast("任務檔已匯入")}catch(err){alert("匯入失敗："+err.message)}e.target.value=""};
+$("exportMissionBtn").onclick=()=>{const blob=new Blob([JSON.stringify({app:"KTAK Mission Room",version:"1.6",room:roomId,exportedAt:now(),state},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`KTAK_${roomId}_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$("importMissionBtn").onclick=()=>$("importMissionFile").click();$("importMissionFile").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const x=JSON.parse(await f.text()),incoming=x.state||x;
+    if(!incoming||!incoming.brief||!incoming.map||!incoming.board)throw new Error("格式不相容");
+    // 線上版只匯入任務內容；目前房間、成員身分、聊天室保持不變。
+    state.brief=clone(incoming.brief);
+    state.map=clone(incoming.map);
+    state.board=clone(incoming.board);
+    (state.map.items||[]).forEach(item=>{ensureObjectUuid(item);if(!item.ownerId)item.ownerId=currentUserId});
+    (state.board.pages||[]).forEach(pg=>{ensureObjectUuid(pg);(pg.objects||[]).forEach(o=>{ensureObjectUuid(o);if(!o.ownerId)o.ownerId=currentUserId})});
+    save();publish();renderAll();toast("任務內容已匯入並同步")
+  }catch(err){alert("匯入失敗："+err.message)}
+  e.target.value=""
+};
 
 /* map */
 const map=L.map('map',{zoomControl:true,preferCanvas:false}).setView([23.003,120.215],15);
@@ -1095,25 +1350,162 @@ $("nextFloorBtn").onclick=()=>{if(state.board.active<state.board.pages.length-1)
 $("addFloorBtn").onclick=()=>{if(!can('board')){toast('目前角色只能觀看');return}state.board.pages.push({id:uid(),name:`${state.board.pages.length+1}F`,objects:[]});state.board.active=state.board.pages.length-1;publish();renderBoard()};
 $("deleteFloorBtn").onclick=()=>{if(!can('board')){toast('目前角色只能觀看');return}if(state.board.pages.length===1){toast('至少保留一頁');return}if(!confirm('刪除目前樓層？'))return;state.board.pages.splice(state.board.active,1);state.board.active=Math.max(0,state.board.active-1);publish();renderBoard()};
 $("boardToolsMobile").onclick=e=>{e.preventDefault();e.stopPropagation();$("boardSidebar").classList.toggle('open')};
-window.addEventListener('resize',()=>{if(activePage==='boardPage')updateBoardScale()});
+window.addEventListener('resize',()=>{if($('boardPage').classList.contains('active'))updateBoardScale()});
 document.addEventListener('pointerdown',e=>{
   if(!e.target.closest('#mapContextMenu')&&!e.target.closest('.leaflet-marker-icon')&&!e.target.closest('.leaflet-interactive')&&!e.target.closest('.map-transform-handle'))hideMapMenu();
   if(!e.target.closest('#boardContextMenu')&&e.target!==canvas)hideBoardMenu()
 });
 
 /* chat */
-function renderMembers(){if(!state)return;presence[currentUserId]={name:displayName(),ts:Date.now()};const cut=Date.now()-16000;Object.keys(presence).forEach(k=>{if(presence[k].ts<cut)delete presence[k]});$("memberList").innerHTML='';Object.values(presence).forEach(p=>{const s=document.createElement('span');s.className='badge';s.textContent=p.name;$("memberList").appendChild(s)})}
-function renderChat(){$("chatLog").innerHTML='';state.chat.forEach(m=>{const d=document.createElement('div');d.className='chatMsg'+(m.senderId===currentUserId?' me':'');const time=new Date(m.ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});d.innerHTML=`<div class="meta">${escapeHtml(m.senderName)} · ${time}</div>${escapeHtml(m.text)}`;if(role()==='commander'||m.senderId===currentUserId){const del=document.createElement('button');del.className='deleteChat';del.textContent='刪除';del.onclick=()=>{state.chat=state.chat.filter(x=>x.id!==m.id);publish();renderChat()};d.appendChild(del)}$("chatLog").appendChild(d)});$("chatLog").scrollTop=$("chatLog").scrollHeight;$("chatInput").disabled=!can('chat');$("chatSendBtn").disabled=!can('chat');$("chatInput").placeholder=can('chat')?'輸入訊息…':'觀察員只能觀看';renderMembers()}
-function sendChat(){if(!can('chat')){toast('觀察員只能觀看');return}const t=$("chatInput").value.trim();if(!t)return;state.chat.push({id:uid(),senderId:currentUserId,senderName:displayName(),text:t,ts:now()});$("chatInput").value='';publish();renderChat()}$("chatSendBtn").onclick=sendChat;$("chatInput").addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
+let pendingChatPhoto=null,chatImageUrlCache=new Map();
+function renderMembers(){
+  if(!state)return;$("memberList").innerHTML='';
+  const vals=Object.values(presence);
+  if(!vals.length&&user())vals.push({name:displayName(),role:role()});
+  vals.forEach(p=>{const s=document.createElement('span');s.className='badge';s.textContent=p.name;$("memberList").appendChild(s)})
+}
+async function signedChatUrl(path){
+  if(!path)return null;const cached=chatImageUrlCache.get(path);
+  if(cached&&cached.expires>Date.now()+60000)return cached.url;
+  const {data,error}=await sb.storage.from("ktak-chat").createSignedUrl(path,3600);
+  if(error)throw error;chatImageUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+3500000});return data.signedUrl
+}
+function renderChat(){
+  $("chatLog").innerHTML='';
+  state.chat.forEach(m=>{
+    const d=document.createElement('div');d.className='chatMsg'+(m.senderId===currentUserId?' me':'');
+    const time=new Date(m.ts).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    const meta=document.createElement('div');meta.className='meta';meta.textContent=`${m.senderName} · ${time}`;d.appendChild(meta);
+    if(m.text){const txt=document.createElement('div');txt.className='chatText';txt.textContent=m.text;d.appendChild(txt)}
+    if(m.imagePath){
+      const img=document.createElement('img');img.className='chatPhoto';img.alt='聊天室照片';img.title='點一下開啟照片';
+      img.src='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="180"><rect width="100%" height="100%" fill="#111c22"/><text x="50%" y="50%" fill="#9fb2bd" font-family="sans-serif" font-size="16" text-anchor="middle">照片載入中…</text></svg>`);
+      signedChatUrl(m.imagePath).then(url=>{img.src=url;img.onclick=()=>window.open(url,'_blank')}).catch(()=>{img.alt='照片載入失敗'});
+      d.appendChild(img)
+    }
+    if(role()==='commander'||m.senderId===currentUserId){
+      const del=document.createElement('button');del.className='deleteChat';del.textContent='刪除';
+      del.onclick=async()=>{
+        if(!confirm('刪除這則訊息？'))return;
+        try{
+          if(m.imagePath){const {error:se}=await sb.storage.from("ktak-chat").remove([m.imagePath]);if(se)console.warn(se)}
+          const {error}=await sb.from("ktak_chat_messages").delete().eq("room_id",currentRoomUuid).eq("id",m.id);if(error)throw error;
+          state.chat=state.chat.filter(x=>x.id!==m.id);renderChat()
+        }catch(e){toast("刪除失敗："+e.message)}
+      };d.appendChild(del)
+    }
+    $("chatLog").appendChild(d)
+  });
+  $("chatLog").scrollTop=$("chatLog").scrollHeight;
+  const ok=can('chat');$("chatInput").disabled=!ok;$("chatSendBtn").disabled=!ok;$("chatPhotoBtn").disabled=!ok;
+  $("chatInput").placeholder=ok?'輸入訊息…':'觀察員只能觀看';renderMembers()
+}
+function clearChatPhoto(){
+  pendingChatPhoto=null;$("chatPhotoInput").value='';$("chatPhotoPreview").classList.add("hidden");$("chatPhotoPreviewImg").removeAttribute("src");$("chatPhotoName").textContent=''
+}
+$("chatPhotoBtn").onclick=()=>{if(!can('chat')){toast('觀察員只能觀看');return}$("chatPhotoInput").click()};
+$("chatPhotoClearBtn").onclick=clearChatPhoto;
+$("chatPhotoInput").onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith("image/")){toast("請選擇圖片");return}
+  if(f.size>20*1024*1024){toast("原始照片請小於 20MB");clearChatPhoto();return}
+  pendingChatPhoto=f;$("chatPhotoName").textContent=f.name;
+  const u=URL.createObjectURL(f);$("chatPhotoPreviewImg").src=u;$("chatPhotoPreviewImg").onload=()=>URL.revokeObjectURL(u);
+  $("chatPhotoPreview").classList.remove("hidden")
+};
+async function compressChatPhoto(file){
+  const dataUrl=await new Promise((resolve,reject)=>{
+    const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error("照片讀取失敗"));r.readAsDataURL(file)
+  });
+  const img=await new Promise((resolve,reject)=>{
+    const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error("照片解析失敗"));i.src=dataUrl
+  });
+  const max=1600;let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  if(w>max){h=Math.round(h*max/w);w=max}if(h>max){w=Math.round(w*max/h);h=max}
+  const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
+  return await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error("照片壓縮失敗")),"image/jpeg",.78))
+}
+async function sendChat(){
+  if(!can('chat')){toast('觀察員只能觀看');return}
+  const t=$("chatInput").value.trim(),photo=pendingChatPhoto;if(!t&&!photo)return;
+  $("chatSendBtn").disabled=true;$("chatPhotoBtn").disabled=true;
+  let imagePath=null;
+  try{
+    if(photo){
+      const blob=await compressChatPhoto(photo);
+      imagePath=`${currentRoomUuid}/${currentUserId}/${safeUuid()}.jpg`;
+      const {error:upErr}=await sb.storage.from("ktak-chat").upload(imagePath,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
+      if(upErr)throw upErr
+    }
+    const {error}=await sb.from("ktak_chat_messages").insert({
+      room_id:currentRoomUuid,sender_id:currentUserId,sender_name:displayName(),text:t,image_path:imagePath
+    });
+    if(error)throw error;
+    $("chatInput").value='';clearChatPhoto()
+  }catch(e){
+    console.error(e);
+    if(imagePath)await sb.storage.from("ktak-chat").remove([imagePath]).catch(()=>{});
+    toast("傳送失敗："+e.message)
+  }finally{$("chatSendBtn").disabled=!can('chat');$("chatPhotoBtn").disabled=!can('chat')}
+}
+$("chatSendBtn").onclick=sendChat;$("chatInput").addEventListener('keydown',e=>{if(e.key==='Enter')sendChat()});
 
 /* permissions */
-function renderPermissions(){if(!can('permission')){$("permissionTab").classList.add('hidden');return}$("permissionTab").classList.remove('hidden');$("permissionList").innerHTML='';Object.values(state.users).forEach(u=>{const row=document.createElement('div');row.className='permissionRow';const info=document.createElement('div');info.className='permissionUser';info.innerHTML=`<b>${escapeHtml(displayName(u))}</b><small>ID ${u.id.slice(0,8)} · ${u.id===state.meta.creatorId?'房間建立者':'加入者'}</small>`;const sel=document.createElement('select');Object.entries(roles).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;o.selected=u.role===k;sel.appendChild(o)});sel.onchange=()=>{const commanders=Object.values(state.users).filter(x=>x.role==='commander');if(u.role==='commander'&&sel.value!=='commander'&&commanders.length===1){toast('房間至少保留一名指揮官');sel.value='commander';return}u.role=sel.value;publish();renderAll()};const clear=document.createElement('button');clear.className='danger';clear.textContent='清除該成員內容';clear.onclick=()=>{if(!confirm(`清除 ${displayName(u)} 建立的地圖、戰術板與聊天內容？`))return;state.map.items=state.map.items.filter(x=>x.ownerId!==u.id);state.board.pages.forEach(p=>p.objects=p.objects.filter(x=>x.ownerId!==u.id));state.chat=state.chat.filter(x=>x.senderId!==u.id);publish();renderAll()};row.append(info,sel,clear);$("permissionList").appendChild(row)})}
+function renderPermissions(){
+  if(!can('permission')){$("permissionTab").classList.add('hidden');return}
+  $("permissionTab").classList.remove('hidden');$("permissionList").innerHTML='';
+  Object.values(state.users).forEach(u=>{
+    const row=document.createElement('div');row.className='permissionRow';
+    const info=document.createElement('div');info.className='permissionUser';
+    info.innerHTML=`<b>${escapeHtml(displayName(u))}</b><small>ID ${u.id.slice(0,8)} · ${u.id===state.meta.creatorId?'房間建立者':'加入者'}</small>`;
+    const sel=document.createElement('select');
+    Object.entries(roles).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=v;o.selected=u.role===k;sel.appendChild(o)});
+    sel.onchange=async()=>{
+      const before=u.role;sel.disabled=true;
+      try{
+        const {error}=await sb.rpc("ktak_set_member_role",{p_room_id:currentRoomUuid,p_target_user:u.id,p_role:sel.value});
+        if(error)throw error;await fetchMembers();renderAll()
+      }catch(e){sel.value=before;toast(String(e.message).includes("LAST_COMMANDER")?"房間至少保留一名指揮官":"權限更新失敗："+e.message)}
+      finally{sel.disabled=false}
+    };
+    const clear=document.createElement('button');clear.className='danger';clear.textContent='清除該成員內容';
+    clear.onclick=async()=>{
+      if(!confirm(`清除 ${displayName(u)} 建立的地圖、戰術板與聊天內容？`))return;
+      clear.disabled=true;
+      try{
+        const {data:photos,error:pe}=await sb.from("ktak_chat_messages").select("image_path").eq("room_id",currentRoomUuid).eq("sender_id",u.id).not("image_path","is",null);
+        if(pe)throw pe;const paths=(photos||[]).map(x=>x.image_path).filter(Boolean);if(paths.length)await sb.storage.from("ktak-chat").remove(paths);
+        const results=await Promise.all([
+          sb.from("ktak_map_items").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+          sb.from("ktak_board_objects").delete().eq("room_id",currentRoomUuid).eq("owner_id",u.id),
+          sb.from("ktak_chat_messages").delete().eq("room_id",currentRoomUuid).eq("sender_id",u.id)
+        ]);
+        const bad=results.find(x=>x.error);if(bad)throw bad.error;
+        await Promise.all([fetchMap(),fetchBoard(),fetchChat()]);renderAll();toast("已清除該成員內容")
+      }catch(e){toast("清除失敗："+e.message)}
+      finally{clear.disabled=false}
+    };
+    row.append(info,sel,clear);$("permissionList").appendChild(row)
+  })
+}
 
 function applyRoleUI(){$("permissionTab").classList.toggle('hidden',!can('permission'));$("briefEditBtn").classList.toggle('hidden',!can('brief')||briefEditing);if(!can('map')){$$('.mapTool:not([data-tool="pan"]),.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.add('disabled'))}else{$$('.mapTool,.mapIconTool,#customIconBtn,#photoPlaceBtn,#photoInput').forEach(x=>x.classList.remove('disabled'))}if(!can('board')){$$('.boardTool:not([data-board-tool="select"]),#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.add('disabled'))}else{$$('.boardTool,#addFloorBtn,#deleteFloorBtn,#clearBoardBtn').forEach(x=>x.classList.remove('disabled'))}}
 function renderAll(){if(!state)return;$("headerRoom").textContent=roomId;$("headerNick").textContent=displayName();$("headerRole").textContent=roles[role()];fillBrief();setBriefEdit(false);renderMapItems();if(!state.board.pages.length)state.board.pages=[{id:uid(),name:'1F',objects:[]}];state.board.active=Math.min(state.board.active,state.board.pages.length-1);renderBoard();renderChat();renderPermissions();applyRoleUI();renderMembers()}
 
-/* restore tab session if possible */
-(async()=>{const r=sessionStorage.getItem('ktak.v11.room'),u=sessionStorage.getItem('ktak.v11.user');if(r&&u){const s=loadRoom(r);if(s&&s.users?.[u]){roomId=r;currentUserId=u;state=s;enterRoom();return}}showEntry('home')})();
+/* restore online room session if possible */
+(async()=>{
+  const backendOk=await initBackend();
+  if(!backendOk){showEntry('home');return}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const savedRoom=sessionStorage.getItem("ktak.v16.roomUuid");
+    if(session?.user&&savedRoom){
+      currentUserId=session.user.id;
+      const {data:member,error}=await sb.from("ktak_room_members").select("user_id").eq("room_id",savedRoom).eq("user_id",currentUserId).maybeSingle();
+      if(!error&&member){await loadOnlineRoom(savedRoom);await enterRoom();return}
+    }
+  }catch(e){console.warn("restore",e)}
+  showEntry('home')
+})();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 })();
 </script>
