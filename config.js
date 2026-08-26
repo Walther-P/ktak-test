@@ -3,5 +3,6 @@
 // 絕對不要放 Secret key / service_role。
 window.KTAK_CONFIG = {
   SUPABASE_URL: "https://ycxflnxkhlosmrfzunza.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_ceNEjH7T83TxvwPo1olR0Q_n2NZPDAD"
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_ceNEjH7T83TxvwPo1olR0Q_n2NZPDAD",
+  TURNSTILE_SITE_KEY: "0x4AAAAAAEcrMapslwAv_rVw"
 };
